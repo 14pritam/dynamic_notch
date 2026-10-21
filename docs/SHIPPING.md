@@ -24,9 +24,32 @@ Release assets are always named `DynamicNotch.dmg`, so the README's link
   script copies that section into the GitHub release notes, so write it the way you'd want people
   to read it.
 
+## Branches
+
+* **develop** is where all work happens. Commit features and fixes here.
+* **main** only ever holds released code. Every commit on main is something users can download.
+
+When develop is ready to ship:
+
+```bash
+git switch develop && git pull
+```
+
+```bash
+git switch main && git pull && git merge --no-ff develop
+```
+
+Then follow the release steps below on main, and afterwards bring develop up to date so it
+has the version bump and changelog:
+
+```bash
+git switch develop && git merge main && git push
+```
+
 ## Making a release now (unsigned)
 
-1. Change `VERSION`, add the matching `## [x.y.z] - date` section to `CHANGELOG.md`, and commit.
+1. On main, change `VERSION`, add the matching `## [x.y.z] - date` section to `CHANGELOG.md`,
+   and commit.
 2. Run the manual checklist in [QA.md](QA.md) on a build of that commit.
 3. Run:
 
@@ -34,8 +57,8 @@ Release assets are always named `DynamicNotch.dmg`, so the README's link
    ./Scripts/release.sh
    ```
 
-The script stops if the working tree isn't committed, the tag already exists, or the changelog
-has no section for the version. Then it runs all checks, builds `build/DynamicNotch.dmg`, tags
+The script stops if you're not on main, local main doesn't match GitHub, the working tree isn't
+committed, the tag already exists, or the changelog has no section for the version. Then it runs all checks, builds `build/DynamicNotch.dmg`, tags
 `vX.Y.Z`, pushes, and publishes the GitHub release with the changelog section as its notes (plus
 short install steps for new users).
 

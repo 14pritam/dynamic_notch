@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Publishes the version in the VERSION file as a GitHub release.
 #
-# Before running:
+# Releases only come from main. Work happens on develop and is merged into main when it's ready.
+#
+# Before running, on main:
 #   1. Set the new version in VERSION (x.y.z, see CHANGELOG.md for the rules).
 #   2. Add a "## [x.y.z] - date" section to CHANGELOG.md.
 #   3. Commit both.
@@ -19,8 +21,11 @@ TAG="v$VERSION"
 fail() { echo "✗ $*" >&2; exit 1; }
 
 [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "VERSION must look like 1.2.3 (got '$VERSION')"
+BRANCH="$(git symbolic-ref --quiet --short HEAD || echo "(detached)")"
+[[ "$BRANCH" == "main" ]] || fail "Releases come from main, but you're on $BRANCH. Merge into main first"
 git diff --quiet && git diff --cached --quiet || fail "Commit your changes first"
 git fetch --tags --quiet origin
+[[ "$(git rev-parse HEAD)" == "$(git rev-parse origin/main)" ]] || fail "Local main and origin/main differ. Pull or push first"
 git rev-parse -q --verify "refs/tags/$TAG" >/dev/null && fail "$TAG already exists. Bump VERSION"
 grep -q "^## \[$VERSION\]" CHANGELOG.md || fail "CHANGELOG.md has no '## [$VERSION]' section"
 command -v gh >/dev/null || fail "The GitHub CLI (gh) is needed"
@@ -51,6 +56,6 @@ echo "› Releasing Dynamic Notch $VERSION"
 ./Scripts/make-dmg.sh
 
 git tag -a "$TAG" -m "Dynamic Notch $VERSION"
-git push origin HEAD "$TAG"
+git push origin main "$TAG"
 gh release create "$TAG" build/DynamicNotch.dmg --title "Dynamic Notch $VERSION" --notes-file "$NOTES"
 echo "✓ Released $TAG"
