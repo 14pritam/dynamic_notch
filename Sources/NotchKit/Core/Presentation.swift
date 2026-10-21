@@ -1,0 +1,193 @@
+import Foundation
+
+/// A live activity that can sit in the pill. Order of cases is not meaningful; use `priority`.
+public enum ActivityKind: String, CaseIterable, Sendable, Codable, Hashable {
+    case call
+    case timer
+    case nowPlaying
+
+    /// Lower comes first.
+    public var priority: Int {
+        switch self {
+        case .call: 0
+        case .timer: 1
+        case .nowPlaying: 2
+        }
+    }
+}
+
+/// A short system event, shown briefly like the iPhone's charging or AirPods alerts.
+public enum IslandAlert: Equatable, Sendable {
+    case charging(level: Int, isCharging: Bool)
+    case lowBattery(level: Int)
+    case headphones(name: String, symbol: String)
+    case timerFinished
+    /// Shown once on first launch, so a new user sees where the app lives.
+    case welcome
+
+    /// Alerts of the same kind replace each other instead of queueing.
+    public enum Kind: Hashable, Sendable {
+        case power
+        case headphones
+        case timer
+        case app
+    }
+
+    public var kind: Kind {
+        switch self {
+        case .charging, .lowBattery: .power
+        case .headphones: .headphones
+        case .timerFinished: .timer
+        case .welcome: .app
+        }
+    }
+
+    /// How long the alert stays. "Timer done" waits for the user, but clears itself after
+    /// ten minutes so an unattended Mac isn't left with the notch expanded.
+    public var displayDuration: TimeInterval {
+        switch self {
+        case .charging: 3
+        case .lowBattery: 4
+        case .headphones: 3
+        case .timerFinished: 600
+        case .welcome: 4
+        }
+    }
+
+    /// Urgent alerts interrupt an expanded view; the rest wait for it to close.
+    public var isUrgent: Bool {
+        self == .timerFinished
+    }
+}
+
+public enum ExpandTarget: Equatable, Sendable {
+    case activity(ActivityKind)
+    case home
+}
+
+/// Everything the pill can look like at a given moment.
+public enum IslandPresentation: Equatable, Sendable {
+    /// Retracted into the notch (or gone). `peek` shows a small droplet while the notch is hovered.
+    case hidden(peek: Bool)
+    /// An empty pill, shown when "show when idle" is on or the appearance settings are open.
+    case idle
+    case compact(primary: ActivityKind, secondary: ActivityKind?)
+    case expanded(ActivityKind)
+    case home
+    case alert(IslandAlert)
+    case drop(targeted: Bool)
+
+    public var isExpandedFamily: Bool {
+        switch self {
+        case .expanded, .home, .alert, .drop: true
+        case .hidden, .idle, .compact: false
+        }
+    }
+
+    public var isVisible: Bool {
+        if case .hidden = self { return false }
+        return true
+    }
+
+    /// The idle or compact pill: small, clickable, and lifts slightly on hover.
+    public var isRestingPill: Bool {
+        switch self {
+        case .idle, .compact: true
+        default: false
+        }
+    }
+
+    /// Changes in this value are shape changes worth a liquid pulse (appear, disappear, split).
+    public var topology: Topology {
+        switch self {
+        case .hidden(let peek): Topology(visible: false, peek: peek, split: false)
+        case .compact(_, let secondary): Topology(visible: true, peek: false, split: secondary != nil)
+        default: Topology(visible: true, peek: false, split: false)
+        }
+    }
+
+    public struct Topology: Hashable, Sendable {
+        public var visible: Bool
+        public var peek: Bool
+        public var split: Bool
+    }
+}
+
+public struct PresentationInput: Equatable, Sendable {
+    public var activeActivities: Set<ActivityKind>
+    public var preferredPrimary: ActivityKind?
+    public var alert: IslandAlert?
+    public var expandTarget: ExpandTarget?
+    public var isFileDragNear: Bool
+    public var isDropTargeted: Bool
+    public var showWhenIdle: Bool
+    public var isHoveringNotch: Bool
+    public var isPreviewing: Bool
+
+    public init(
+        activeActivities: Set<ActivityKind> = [],
+        preferredPrimary: ActivityKind? = nil,
+        alert: IslandAlert? = nil,
+        expandTarget: ExpandTarget? = nil,
+        isFileDragNear: Bool = false,
+        isDropTargeted: Bool = false,
+        showWhenIdle: Bool = false,
+        isHoveringNotch: Bool = false,
+        isPreviewing: Bool = false
+    ) {
+        self.activeActivities = activeActivities
+        self.preferredPrimary = preferredPrimary
+        self.alert = alert
+        self.expandTarget = expandTarget
+        self.isFileDragNear = isFileDragNear
+        self.isDropTargeted = isDropTargeted
+        self.showWhenIdle = showWhenIdle
+        self.isHoveringNotch = isHoveringNotch
+        self.isPreviewing = isPreviewing
+    }
+}
+
+public enum PresentationResolver {
+    /// Activities in display order: the user's swipe choice first, then by priority.
+    public static func ordered(_ active: Set<ActivityKind>, preferred: ActivityKind?) -> [ActivityKind] {
+        let byPriority = active.sorted { $0.priority < $1.priority }
+        guard let preferred, active.contains(preferred) else { return byPriority }
+        return [preferred] + byPriority.filter { $0 != preferred }
+    }
+
+    /// The activity a swipe brings to the front. Steps through the priority order and wraps,
+    /// so repeated swipes visit every activity.
+    public static func nextPrimary(_ active: Set<ActivityKind>, current: ActivityKind?, forward: Bool) -> ActivityKind? {
+        let byPriority = active.sorted { $0.priority < $1.priority }
+        guard byPriority.count > 1 else { return nil }
+        let index = current.flatMap { byPriority.firstIndex(of: $0) } ?? 0
+        let step = forward ? 1 : byPriority.count - 1
+        return byPriority[(index + step) % byPriority.count]
+    }
+
+    /// Drag beats alerts, alerts beat the expanded view, then activities by priority, then idle.
+    public static func resolve(_ input: PresentationInput) -> IslandPresentation {
+        if input.isFileDragNear || input.isDropTargeted {
+            return .drop(targeted: input.isDropTargeted)
+        }
+        if let alert = input.alert {
+            return .alert(alert)
+        }
+        switch input.expandTarget {
+        case .home:
+            return .home
+        case .activity(let kind) where input.activeActivities.contains(kind):
+            return .expanded(kind)
+        default:
+            break
+        }
+        let ordered = ordered(input.activeActivities, preferred: input.preferredPrimary)
+        if let primary = ordered.first {
+            return .compact(primary: primary, secondary: ordered.dropFirst().first)
+        }
+        if input.showWhenIdle || input.isPreviewing {
+            return .idle
+        }
+        return .hidden(peek: input.isHoveringNotch)
+    }
+}

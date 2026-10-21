@@ -1,0 +1,102 @@
+# Research: what the Dynamic Island does, and what moves to the Mac
+
+This is the inventory the app was designed from. It lists what the iPhone Dynamic Island does,
+then says for each item whether it can come to a MacBook, and how.
+
+## 1. The request
+
+From the Threads comment that started this project:
+
+> Dynamic Island for Mac with notches, to be under notch, options to make it wider / less
+> wide and thicker / thin or higher/lower … tons of notch apps for Mac saying Dynamic Island
+> which they aren't … Dynamic Island for Mac aka dynamic PILL.
+
+Read as requirements:
+
+| # | Requirement | How it is handled |
+|---|-------------|---------------------|
+| R1 | A real island that behaves like the iPhone's, not a static drawer | Compact, minimal, expanded and alert presentations with live activities |
+| R2 | Lives at the notch | The notch itself grows (default); a floating pill is an optional style |
+| R3 | Width, thickness, vertical and horizontal position are adjustable | Size modes, sliders and live preview in Settings › Appearance |
+| R4 | Looks like Apple made it; the extension reads as the notch itself | Pitch black surface, notch-shaped outline, spring and liquid motion |
+
+The project later settled on a **dynamic notch** (the notch itself grows) rather than a floating
+island; that is the default, with the floating pill kept as an option.
+
+## 2. How the iPhone Dynamic Island works
+
+### 2.1 Presentations (from ActivityKit / Human Interface Guidelines)
+
+| Presentation | What it looks like | When |
+|---|---|---|
+| **Compact** | Pill wider than the camera cutout; a *leading* view on the left, a *trailing* view on the right, nothing in the middle | One live activity |
+| **Minimal** | A small detached circle beside the main pill | A second live activity is running |
+| **Expanded** | Large rounded rectangle with leading, trailing, center and bottom regions | Long-press, or important updates |
+| **System alert** | Pill briefly grows to show a short status (charging, silent mode, AirPods connected, Face ID) then shrinks back | System events |
+
+### 2.2 Interactions
+
+| iPhone gesture | Result |
+|---|---|
+| Tap | Opens the owning app |
+| Long-press | Shows the expanded view |
+| Swipe toward the center | Hides the activity into the minimal view |
+| Swipe outward | Brings it back |
+| Tap outside | Collapses the expanded view |
+
+### 2.3 Motion
+
+* Shape changes use a soft spring with a little overshoot. The island never "teleports".
+* When a second activity appears, a droplet pinches off the main pill (a metaball / "goo" effect).
+* Content blurs and scales out while new content blurs in. Old and new content never sit
+  side by side.
+* Pure black, so the island blends with the camera hardware.
+
+### 2.4 System activities on iPhone
+
+Music / Now Playing, Timer, Phone & FaceTime calls, Screen recording, Charging,
+Low battery, Silent mode switch, AirPods connected (with battery), Face ID, Apple Pay,
+AirDrop progress, Personal Hotspot, Voice Memos recording, Maps navigation, Focus change,
+Shazam, Find My alerts, and third-party Live Activities (sport scores, food delivery, rides).
+
+## 3. Transfer analysis for macOS
+
+Legend: **Yes** = shipped in 1.0. **Later** = possible but not in 1.0. **No** = macOS gives no
+reliable way to do it.
+
+| iPhone feature | Mac | How / why |
+|---|---|---|
+| Now Playing (music, podcasts, video) | **Yes** | MediaRemote via a small helper process. Works for Music, Spotify, browsers, Podcasts, etc. |
+| Timer | **Yes** | Clock.app has no API, so the app has its own timer |
+| Calls (FaceTime, Zoom, Meet…) | **Yes** | Core Audio tells us which app is using the microphone; Core Media IO tells us the camera is on. Shown as a call with a running duration |
+| Charging | **Yes** | IOKit power-source notifications |
+| Low battery (20 %, 10 %) | **Yes** | IOKit |
+| AirPods / headphones connected | **Yes** (without battery %) | Core Audio default-output change + Bluetooth transport type. Battery needs Bluetooth permission and private keys, so it is left out |
+| AirDrop | **Yes**, adapted | iPhone shows AirDrop progress. On the Mac, the pill becomes a drop target while you drag files near the notch, then sends them with AirDrop |
+| Expanded view on long-press | **Yes**, adapted | Click expands; pointer leaving or clicking elsewhere collapses |
+| Swipe between activities | **Yes**, adapted | Two-finger horizontal swipe on the pill swaps which activity is in front |
+| Split into minimal bubble | **Yes** | Second activity becomes a detached bubble with the liquid split animation |
+| Silent mode | **No** | Macs have no ring switch. Mute already shows a system HUD; repeating it would be noise |
+| Volume / brightness HUD | **No** | The system HUD cannot be hidden cleanly, so we would show it twice |
+| Face ID / Touch ID | **No** | No API |
+| Apple Pay | **No** | No API |
+| Screen recording | **No** | No public API to see that another app is recording |
+| Focus mode changes | **No** | No public API for third-party apps |
+| Notifications | **No** | Apps cannot read other apps' notifications |
+| Third-party Live Activities | **No** | ActivityKit does not exist for third-party Mac apps |
+| AirPods battery | **Later** | Needs Bluetooth permission and private IORegistry keys |
+| Calendar "up next" | **Later** | Needs Calendar permission; not part of the iPhone island |
+| Voice Memos recording | **Yes** (as microphone use) | Covered by the microphone activity: shows the app and duration |
+
+## 4. Mac-specific facts we measured (MacBook Air M2, macOS 27)
+
+* Notch: 179 × 32 pt on a 1470 × 956 pt screen (`NSScreen.auxiliaryTopLeftArea` /
+  `auxiliaryTopRightArea`, `safeAreaInsets.top`).
+* Calling `MRMediaRemoteGetNowPlayingInfo` from our own process returns nothing (blocked
+  since macOS 15.4). The same call from inside `/usr/bin/perl` returns full track info.
+  `MRMediaRemoteSendCommand` returns success from either.
+* Core Audio process objects (`kAudioHardwarePropertyProcessObjectList`,
+  `kAudioProcessPropertyIsRunningInput`) report which process holds the microphone, with no
+  permission prompt.
+* Metal shader compilation is not available without an extra Xcode download, so the liquid
+  effect uses SwiftUI `Canvas` filters, not a custom shader.
