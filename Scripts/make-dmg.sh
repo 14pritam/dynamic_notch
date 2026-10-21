@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds a universal release app and packages it as build/DynamicNotch-<version>.dmg.
+# Builds a universal release app and packages it as build/DynamicNotch.dmg.
 #
 #   SIGN_IDENTITY="Developer ID Application: Name (TEAMID)"   required for distribution
 #   NOTARY_PROFILE=profile-name   a `xcrun notarytool store-credentials` profile; when set,
@@ -16,7 +16,7 @@ export CONFIG=release
 "$ROOT/Scripts/build-app.sh"
 
 APP="$ROOT/build/Dynamic Notch.app"
-DMG="$ROOT/build/DynamicNotch-$VERSION.dmg"
+DMG="$ROOT/build/DynamicNotch.dmg"
 STAGING="$(mktemp -d)"
 trap 'rm -rf "$STAGING"' EXIT
 

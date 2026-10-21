@@ -11,7 +11,7 @@ Run them all with `./Scripts/check.sh`.
 
 | Check | Result |
 |---|---|
-| Unit tests (Swift Testing), 102 tests in 18 suites | ✅ all pass |
+| Unit tests (Swift Testing), 103 tests in 19 suites | ✅ all pass |
 | Release build with warnings as errors (Swift and Objective-C) | ✅ zero warnings |
 | Universal binary (arm64 + x86_64) | ✅ |
 | Hardened runtime signature, `codesign --verify --deep --strict` | ✅ |
@@ -46,6 +46,7 @@ Each state was triggered on the real notch with debug-build commands and checked
 | Charging, low battery, headphones alerts | ✅ all three sizes |
 | AirDrop drop target, normal and targeted | ✅ |
 | Floating pill style | ✅ |
+| Downloaded (quarantined) app: Now Playing works, no extra warning | ✅ (after fix) |
 | Settings: General, Appearance (live preview), Activities, About | ✅ |
 | Animation: grows out of the notch, no gap at the top edge | ✅ frame-by-frame from a screen recording |
 
@@ -90,6 +91,7 @@ Notch's own code.
 | Album art decoded and tinted on the main thread | Done on a background queue |
 | Layout maths ran on every mouse move anywhere on screen | Skipped unless the pointer is near the notch |
 | Progress timer ticked while paused; call polling every second during long calls | Paused while paused; 3 s once a call is established |
+| Downloaded copies: macOS blocked the Now Playing helper with a second "Not Opened" warning | The app loads its own unquarantined copy of the helper |
 | `swift build` failed to link with the macOS 27 Command Line Tools SDK | Scripts pin the selected Xcode's SDK |
 
 ## 6. Not verified here — please check by hand

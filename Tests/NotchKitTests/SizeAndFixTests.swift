@@ -275,3 +275,26 @@ struct ModelFixTests {
         #expect(model.layout.contentScale == 0.8)
     }
 }
+
+@Suite("Downloaded app")
+struct QuarantineTests {
+    @Test func helperCopyHasNoQuarantineFlagAndSameBytes() throws {
+        let temp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: temp, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: temp) }
+        let original = temp.appendingPathComponent("original.dylib")
+        try Data("library bytes".utf8).write(to: original)
+        let flag = "0081;00000000;Safari;"
+        setxattr(original.path, "com.apple.quarantine", flag, flag.utf8.count, 0, 0)
+        #expect(getxattr(original.path, "com.apple.quarantine", nil, 0, 0, 0) > 0)
+
+        let copy = try #require(MediaBridgeClient.unquarantinedCopy(of: original, in: temp.appendingPathComponent("support")))
+        #expect(getxattr(copy.path, "com.apple.quarantine", nil, 0, 0, 0) < 0, "no quarantine flag")
+        #expect(try Data(contentsOf: copy) == Data("library bytes".utf8))
+
+        // An updated app replaces the copy; an unchanged one reuses it.
+        try Data("new bytes".utf8).write(to: original)
+        let again = try #require(MediaBridgeClient.unquarantinedCopy(of: original, in: temp.appendingPathComponent("support")))
+        #expect(try Data(contentsOf: again) == Data("new bytes".utf8))
+    }
+}

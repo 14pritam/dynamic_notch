@@ -25,7 +25,7 @@ final class MediaBridgeClient {
     private var isStopping = false
     private let log = Logger(subsystem: Log.subsystem, category: "media-bridge")
 
-    static let libraryName = "libNotchMediaBridge.dylib"
+    nonisolated static let libraryName = "libNotchMediaBridge.dylib"
     private static let perl = URL(fileURLWithPath: "/usr/bin/perl")
     private static let script = """
     use strict; use warnings; use DynaLoader;
@@ -70,17 +70,41 @@ final class MediaBridgeClient {
         return candidates.compactMap { $0 }.first { FileManager.default.fileExists(atPath: $0.path) }
     }
 
+    /// A downloaded app carries the quarantine flag on every file inside it. Once the user has
+    /// opened the app that's fine for the app itself, but Perl loading the helper library would
+    /// trigger a separate "not opened" warning and fail. A copy written by the app has no
+    /// quarantine flag and keeps the library's own signature.
+    nonisolated static func unquarantinedCopy(of library: URL, in folder: URL? = nil, fileManager: FileManager = .default) -> URL? {
+        guard
+            let folder = folder ?? fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
+                .appendingPathComponent("Dynamic Notch", isDirectory: true),
+            let bytes = try? Data(contentsOf: library)
+        else { return nil }
+        let copy = folder.appendingPathComponent(libraryName)
+        do {
+            if (try? Data(contentsOf: copy)) != bytes {
+                try fileManager.createDirectory(at: folder, withIntermediateDirectories: true)
+                try bytes.write(to: copy, options: .atomic)
+            }
+            removexattr(copy.path, "com.apple.quarantine", 0)
+            return copy
+        } catch {
+            return nil
+        }
+    }
+
     private func launch() {
         guard FileManager.default.isExecutableFile(atPath: Self.perl.path) else {
             log.error("/usr/bin/perl is missing; Now Playing is unavailable")
             state = .unavailable
             return
         }
-        guard let library = Self.locateLibrary() else {
+        guard let bundled = Self.locateLibrary() else {
             log.error("\(Self.libraryName, privacy: .public) not found; Now Playing is unavailable")
             state = .unavailable
             return
         }
+        let library = Self.unquarantinedCopy(of: bundled) ?? bundled
 
         let now = Date()
         recentLaunches = recentLaunches.filter { now.timeIntervalSince($0) < 300 } + [now]

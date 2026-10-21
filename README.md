@@ -4,81 +4,104 @@
 
 <h1 align="center">Dynamic Notch</h1>
 
-<p align="center">Live activities for the MacBook notch.</p>
+<p align="center">
+  Your MacBook's notch, brought to life — like the Dynamic Island on iPhone.<br>
+  <b><a href="https://github.com/shandilyaswagat/dynamic_notch/releases/latest/download/DynamicNotch.dmg">⬇ Download Dynamic Notch</a></b> · free · macOS 14 or later
+</p>
 
-The notch itself grows to show what's happening, the way the Dynamic Island works on iPhone:
-music, timers, calls, charging, AirPods and AirDrop. When nothing is going on it disappears back
-into the notch.
+---
 
-## Features
+When something is happening on your Mac, the notch grows to show it. When nothing is, it
+disappears back into the notch.
 
-* **Now Playing** from any app (Music, Spotify, browsers, Podcasts…): artwork, bars tinted to the
-  artwork, scrubbing, play/pause/skip.
-* **Timer** with quick presets, pause and cancel, and a "Done" alert with Repeat and Stop.
-* **Calls and microphone use** with a running duration (FaceTime, Zoom, Meet, Teams…).
-* **Alerts**: charging, low battery (20 % and 10 %), headphones connected.
-* **AirDrop**: drag files to the notch and drop them.
-* **Two activities at once**: the second detaches into a bubble; swipe with two fingers to swap.
-* **Your size**: Small, Medium or Large, plus width and thickness fine-tuning, with live preview.
-  Pitch black by default, so the extension looks like part of the notch. An optional floating
-  pill style adds position controls.
-* Native settings window, menu bar item, open at login, Reduce Motion support.
+- 🎵 **Music** from any app — artwork, play/pause, skip and a progress bar
+- ⏱ **Timer** — start one in two clicks, see it count down next to the camera
+- 📞 **Calls** — FaceTime, Zoom, Meet, Teams and more, with how long you've been on
+- 🔋 **Charging and low battery**
+- 🎧 **AirPods and headphones** connecting
+- 📤 **AirDrop** — drag files onto the notch to send them
+- 📏 **Small, Medium or Large** — pick the size that suits your screen
+
+No account, no internet connection, no tracking.
+
+## Install
+
+> Dynamic Notch is free and isn't registered with Apple yet, so macOS asks you to confirm the
+> first time you open it. This takes about a minute and you only do it once.
+
+**1. Download**
+[DynamicNotch.dmg](https://github.com/shandilyaswagat/dynamic_notch/releases/latest/download/DynamicNotch.dmg)
+and open it.
+
+**2. Drag Dynamic Notch into the Applications folder** in the window that appears.
+
+**3. Open it once.** Go to Applications and double-click **Dynamic Notch**. macOS will say
+*"Dynamic Notch" Not Opened*. Click **Done**.
+
+**4. Allow it.** Open **System Settings → Privacy & Security**, scroll down to the
+**Security** section, and next to *"Dynamic Notch" was blocked* click **Open Anyway**.
+Enter your password (or use Touch ID), then click **Open Anyway** again.
+
+**5. You're done.** The notch briefly shows **Dynamic Notch · Ready**, and a small capsule
+icon appears in your menu bar.
+
+<details>
+<summary>Prefer Terminal? One command instead of steps 3 and 4</summary>
+
+After step 2, run:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/Dynamic Notch.app"
+```
+
+Then open Dynamic Notch normally.
+</details>
+
+## How to use it
+
+| To… | Do this |
+|---|---|
+| Start a timer, or see what's playing | Click the notch |
+| See more about something in the notch | Click it |
+| Close it again | Click anywhere else, or move the pointer away |
+| Switch between two things in the notch | Swipe left or right on it with two fingers |
+| Send files with AirDrop | Drag them onto the notch |
+| Pause a timer, skip a song, open Settings | Right-click the notch |
+| Change the size, start at login, turn features off | Menu bar capsule icon → **Settings…** |
+
+**Tip:** turn on **Open at login** in Settings › General so it's always there.
+
+## Questions
+
+**Nothing shows in the notch.** That's normal when nothing is happening — it hides until you
+play music, start a timer or join a call. Hover over the notch and it swells slightly; click it to
+open.
+
+**My Mac doesn't have a notch.** It still works: a small virtual notch appears at the top centre
+of the screen when there's something to show.
+
+**Music isn't showing.** Start playing something, then wait a second. Dynamic Notch uses a
+behind-the-scenes macOS feature to see what's playing; if a future macOS update removes it,
+music stops appearing but everything else keeps working.
+
+**Is it safe?** The full source code is in this repository. The app doesn't connect to the
+internet, doesn't collect anything, and doesn't ask for any permissions. The warning in step 3
+appears only because the app isn't registered with Apple (that costs a yearly fee); it's planned
+for a later release.
+
+**How do I update?** Download the new DMG and drag it into Applications again, replacing the
+old one. Your settings are kept.
+
+**How do I uninstall?** Click the menu bar capsule icon → **Quit Dynamic Notch**, then drag
+**Dynamic Notch** from Applications to the Trash. To remove everything it stored too, delete
+`~/Library/Application Support/Dynamic Notch` and
+`~/Library/Preferences/com.rectircle.DynamicNotch.plist`.
 
 ## Requirements
 
-* macOS 14 Sonoma or later. Tested on macOS 27.
-* Best on Macs with a notch. Other displays get a virtual notch at the top centre of the screen.
+- macOS 14 Sonoma or later
+- Any Mac (Apple silicon or Intel). Designed for MacBooks with a notch.
 
-## Build and run
+## For developers
 
-Needs Swift 6 (Xcode 16 or later). Built and tested with Xcode 26.4.
-
-```bash
-git clone https://github.com/shandilyaswagat/dynamic_notch.git
-```
-
-```bash
-cd dynamic_notch && ./Scripts/build-app.sh
-```
-
-```bash
-open "build/Dynamic Notch.app"
-```
-
-Run the unit tests and the warnings-as-errors release build:
-
-```bash
-./Scripts/check.sh
-```
-
-You can also open `Package.swift` in Xcode. A local build is signed ad hoc and runs on the Mac
-that built it; see [Shipping](docs/SHIPPING.md) for a signed, notarized DMG.
-
-## Using it
-
-* Hover the notch to see it swell; click it for Home (quick timers and the last media).
-* Click a live activity to expand it. Click elsewhere or move the pointer away to collapse.
-* Right-click for activity actions, Settings and Quit.
-* Settings live in the menu bar item (capsule icon). If you hide that icon, open the app again
-  from Applications to get back to Settings.
-
-## Privacy
-
-No network requests, no analytics, no permission prompts. Call detection reads which app holds
-the microphone from Core Audio; it never records anything.
-
-## How Now Playing works
-
-macOS has no public API for "what's playing in any app". Since macOS 15.4 the private
-MediaRemote framework only answers Apple-signed processes, so a small helper library runs inside
-the system's `/usr/bin/perl` and streams track info to the app over a pipe. Because of this the app
-can't be on the Mac App Store, and if a future macOS closes the gap, Now Playing stops while
-everything else keeps working.
-
-## Docs
-
-* [Research: what moves from iPhone to Mac](docs/RESEARCH.md)
-* [Design spec](docs/DESIGN.md)
-* [Architecture](docs/ARCHITECTURE.md)
-* [QA report](docs/QA.md)
-* [Shipping](docs/SHIPPING.md)
+Build instructions, architecture and design notes are in [docs](docs/README.md).
