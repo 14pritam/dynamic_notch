@@ -5,103 +5,98 @@
 <h1 align="center">Dynamic Notch</h1>
 
 <p align="center">
-  Your MacBook's notch, brought to life — like the Dynamic Island on iPhone.<br>
-  <b><a href="https://github.com/shandilyaswagat/dynamic_notch/releases/latest/download/DynamicNotch.dmg">⬇ Download Dynamic Notch</a></b> · free · macOS 14 or later
+  The iPhone's Dynamic Island, but for your MacBook's notch.<br>
+  <b><a href="https://github.com/shandilyaswagat/dynamic_notch/releases/latest/download/DynamicNotch.dmg">Download it here</a></b> (free, needs macOS 14 or newer)
 </p>
 
 ---
 
-When something is happening on your Mac, the notch grows to show it. When nothing is, it
-disappears back into the notch.
+So the notch on my MacBook just sits there doing nothing. I wanted it to work like the island on
+my phone, so I made this.
 
-- 🎵 **Music** from any app — artwork, play/pause, skip and a progress bar
-- ⏱ **Timer** — start one in two clicks, see it count down next to the camera
-- 📞 **Calls** — FaceTime, Zoom, Meet, Teams and more, with how long you've been on
-- 🔋 **Charging and low battery**
-- 🎧 **AirPods and headphones** connecting
-- 📤 **AirDrop** — drag files onto the notch to send them
-- 📏 **Small, Medium or Large** — pick the size that suits your screen
+When something's going on, the notch stretches out and shows it. When nothing is, it tucks back in
+and you forget it's there.
 
-No account, no internet connection, no tracking.
+Here's what it shows:
 
-## Install
+- Whatever music is playing, from any app, with the album art and play/pause/skip
+- Timers, counting down right next to the camera
+- Calls on FaceTime, Zoom, Meet, Teams and the rest, with how long you've been on
+- A heads up when you plug in your charger or your battery gets low
+- Your AirPods or headphones connecting
+- AirDrop, if you drag files onto the notch
 
-> Dynamic Notch is free and isn't registered with Apple yet, so macOS asks you to confirm the
-> first time you open it. This takes about a minute and you only do it once.
+You can make it small, medium or large, whatever looks right on your screen.
 
-**1. Download**
-[DynamicNotch.dmg](https://github.com/shandilyaswagat/dynamic_notch/releases/latest/download/DynamicNotch.dmg)
-and open it.
+It doesn't need an account, doesn't go online and doesn't track anything.
 
-**2. Drag Dynamic Notch into the Applications folder** in the window that appears.
+## Installing it
 
-**3. Open it once.** Go to Applications and double-click **Dynamic Notch**. macOS will say
-*"Dynamic Notch" Not Opened*. Click **Done**.
+Heads up: I haven't paid Apple for a developer account yet, so the first time you open the app
+your Mac will grumble about it. You only have to deal with this once and it takes about a minute.
 
-**4. Allow it.** Open **System Settings → Privacy & Security**, scroll down to the
-**Security** section, and next to *"Dynamic Notch" was blocked* click **Open Anyway**.
-Enter your password (or use Touch ID), then click **Open Anyway** again.
+1. Download [DynamicNotch.dmg](https://github.com/shandilyaswagat/dynamic_notch/releases/latest/download/DynamicNotch.dmg) and open it.
+2. Drag **Dynamic Notch** into your **Applications** folder.
+3. Go to Applications and double-click **Dynamic Notch**. Your Mac will say it couldn't open it.
+   Just hit **Done**.
+4. Open **System Settings**, go to **Privacy & Security** and scroll down a bit. You'll see a line
+   saying Dynamic Notch was blocked. Click **Open Anyway**, type your password (or use Touch ID)
+   and click **Open Anyway** one more time.
+5. That's it. The notch will flash **Dynamic Notch · Ready** and you'll get a little capsule icon in
+   your menu bar.
 
-**5. You're done.** The notch briefly shows **Dynamic Notch · Ready**, and a small capsule
-icon appears in your menu bar.
-
-<details>
-<summary>Prefer Terminal? One command instead of steps 3 and 4</summary>
-
-After step 2, run:
+If you're comfortable with Terminal, you can skip steps 3 and 4. After dragging the app into
+Applications, run this and then open the app like normal:
 
 ```bash
 xattr -dr com.apple.quarantine "/Applications/Dynamic Notch.app"
 ```
 
-Then open Dynamic Notch normally.
-</details>
+## Using it
 
-## How to use it
-
-| To… | Do this |
+| If you want to | Do this |
 |---|---|
-| Start a timer, or see what's playing | Click the notch |
-| See more about something in the notch | Click it |
-| Close it again | Click anywhere else, or move the pointer away |
-| Switch between two things in the notch | Swipe left or right on it with two fingers |
-| Send files with AirDrop | Drag them onto the notch |
-| Pause a timer, skip a song, open Settings | Right-click the notch |
-| Change the size, start at login, turn features off | Menu bar capsule icon → **Settings…** |
+| Start a timer or see what's playing | Click the notch |
+| See more about something | Click it |
+| Close it | Click anywhere else, or just move your mouse away |
+| Flip between two things | Swipe left or right on it with two fingers |
+| AirDrop some files | Drag them onto the notch |
+| Pause a timer, skip a song, open settings | Right-click the notch |
+| Change the size or turn stuff off | Click the capsule icon in the menu bar, then **Settings…** |
 
-**Tip:** turn on **Open at login** in Settings › General so it's always there.
+You'll probably want to switch on **Open at login** in Settings so it's always running.
 
-## Questions
+## Things people ask
 
-**Nothing shows in the notch.** That's normal when nothing is happening — it hides until you
-play music, start a timer or join a call. Hover over the notch and it swells slightly; click it to
-open.
+**I installed it and nothing's showing up.** That's on purpose. It stays hidden until there's
+something to show, like music or a timer. Hover over the notch and it'll puff out a little. Click
+it to open it.
 
-**My Mac doesn't have a notch.** It still works: a small virtual notch appears at the top centre
-of the screen when there's something to show.
+**My Mac doesn't have a notch.** It still works. You'll get a small fake notch at the top of the
+screen whenever there's something to show.
 
-**Music isn't showing.** Start playing something, then wait a second. Dynamic Notch uses a
-behind-the-scenes macOS feature to see what's playing; if a future macOS update removes it,
-music stops appearing but everything else keeps working.
+**My music isn't showing.** Play something and give it a second. The app uses a hidden bit of
+macOS to see what's playing. If Apple ever removes that in an update, music will stop showing up
+but everything else will keep working.
 
-**Is it safe?** The full source code is in this repository. The app doesn't connect to the
-internet, doesn't collect anything, and doesn't ask for any permissions. The warning in step 3
-appears only because the app isn't registered with Apple (that costs a yearly fee); it's planned
-for a later release.
+**Is it safe?** All the code is right here in this repo, so anyone can look through it. The app
+never goes online, doesn't collect anything and doesn't ask for any permissions. That warning
+during install only shows up because I haven't registered the app with Apple yet. I'm planning to
+do that later.
 
-**How do I update?** Download the new DMG and drag it into Applications again, replacing the
-old one. Your settings are kept.
+**How do I update it?** Download the new version and drag it into Applications again. Replace the
+old one when it asks. Your settings stay put.
 
-**How do I uninstall?** Click the menu bar capsule icon → **Quit Dynamic Notch**, then drag
-**Dynamic Notch** from Applications to the Trash. To remove everything it stored too, delete
-`~/Library/Application Support/Dynamic Notch` and
+**How do I get rid of it?** Click the capsule icon in the menu bar and pick **Quit Dynamic Notch**,
+then drag the app from Applications to the Trash. If you want to clear out everything it saved too,
+delete `~/Library/Application Support/Dynamic Notch` and
 `~/Library/Preferences/com.rectircle.DynamicNotch.plist`.
 
-## Requirements
+## What you need
 
-- macOS 14 Sonoma or later
-- Any Mac (Apple silicon or Intel). Designed for MacBooks with a notch.
+- macOS 14 (Sonoma) or newer
+- Works on Apple silicon and Intel Macs, but it's really made for MacBooks with a notch
 
-## For developers
+## Want to build it yourself?
 
-Build instructions, architecture and design notes are in [docs](docs/README.md).
+Build steps and notes on how it all fits together are in the [docs folder](docs/README.md).
