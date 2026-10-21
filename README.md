@@ -11,7 +11,7 @@
 
 ---
 
-So the notch on my MacBook just sits there doing nothing. I wanted it to work like the island on
+The notch on my MacBook just sits there doing nothing. I wanted it to work like the island on
 my phone, so I made this.
 
 When something's going on, the notch stretches out and shows it. When nothing is, it tucks back in
