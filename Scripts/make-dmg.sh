@@ -4,12 +4,10 @@
 #   SIGN_IDENTITY="Developer ID Application: Name (TEAMID)"   required for distribution
 #   NOTARY_PROFILE=profile-name   a `xcrun notarytool store-credentials` profile; when set,
 #                                 the DMG is notarized and stapled
-#   VERSION=1.0.0 BUILD_NUMBER=1
+#   VERSION / BUILD_NUMBER      see build-app.sh
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-VERSION="${VERSION:-1.0.0}"
-export VERSION
 export UNIVERSAL=1
 export CONFIG=release
 

@@ -9,7 +9,8 @@ to use the app, see the [main README](../README.md).
 | [Design](DESIGN.md) | Sizes, colours, type and motion |
 | [Architecture](ARCHITECTURE.md) | How the code is organised, data flow, debug commands |
 | [QA report](QA.md) | Tests, on-screen checks, performance, known limitations |
-| [Shipping](SHIPPING.md) | Making a release, now and once the app is signed |
+| [Shipping](SHIPPING.md) | Versions, the changelog, and making a release |
+| [Changelog](../CHANGELOG.md) | What changed in each version |
 
 ## Build and run
 

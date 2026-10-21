@@ -1,4 +1,4 @@
-# QA report — version 1.0.0 (build 1)
+# QA report: version 1.1.0
 
 Tested 2026-10-21 on a MacBook Air M2 (Mac14,2, 179 × 32 pt notch), macOS 27.0, Xcode 26.4.1,
 with a second display attached. Three passes: first build, rename to Dynamic Notch, and a
@@ -11,7 +11,7 @@ Run them all with `./Scripts/check.sh`.
 
 | Check | Result |
 |---|---|
-| Unit tests (Swift Testing), 103 tests in 19 suites | ✅ all pass |
+| Unit tests (Swift Testing), 125 tests in 23 suites | ✅ all pass |
 | Release build with warnings as errors (Swift and Objective-C) | ✅ zero warnings |
 | Universal binary (arm64 + x86_64) | ✅ |
 | Hardened runtime signature, `codesign --verify --deep --strict` | ✅ |
@@ -26,7 +26,11 @@ formatting, media-helper parsing (split reads, garbage, runaway output, artwork 
 position, the play/pause flicker guard, artwork ownership, call-app and headphone classification,
 liquid-effect maths, settings persistence and recovery from corrupt values, timer completion, and
 the island model (expand/collapse, alerts waiting and interrupting, disabled activities, notch
-hover, drag-to-AirDrop zone, preview, live size changes).
+hover, drag-to-AirDrop zone, preview, live size changes). Added in 1.1: the file tray (adding,
+duplicates, capacity, saving across launches, files that moved), calendar rules (next event,
+5-minute heads-up, labels), the fixed-size nook, volume and brightness alerts (instant, never
+replayed, kept out of expanded views), drop zones, dragging out of the tray, tabs and
+favourite shortcuts.
 
 ## 2. On-screen verification
 
@@ -46,6 +50,14 @@ Each state was triggered on the real notch with debug-build commands and checked
 | Charging, low battery, headphones alerts | ✅ all three sizes |
 | AirDrop drop target, normal and targeted | ✅ |
 | Floating pill style | ✅ |
+| Home nook: tabs and battery beside the camera, media card plus calendar, timers and shortcuts | ✅ all three sizes |
+| Tray: empty state, files with thumbnails, count badge | ✅ |
+| Mirror: camera prompt (camera itself not switched on during QA) | ✅ |
+| Drop target with Tray and AirDrop halves | ✅ |
+| Volume indicator from a real volume change | ✅ |
+| Brightness indicator from a real brightness change | ✅ (after fix) |
+| Calendar heads-up and shortcut-finished alerts | ✅ |
+| Settings › Home tab, with the real Shortcuts list | ✅ |
 | Downloaded (quarantined) app: Now Playing works, no extra warning | ✅ (after fix) |
 | Settings: General, Appearance (live preview), Activities, About | ✅ |
 | Animation: grows out of the notch, no gap at the top edge | ✅ frame-by-frame from a screen recording |
@@ -92,6 +104,9 @@ Notch's own code.
 | Layout maths ran on every mouse move anywhere on screen | Skipped unless the pointer is near the notch |
 | Progress timer ticked while paused; call polling every second during long calls | Paused while paused; 3 s once a call is established |
 | Downloaded copies: macOS blocked the Now Playing helper with a second "Not Opened" warning | The app loads its own unquarantined copy of the helper |
+| Brightness changes never reached the app (Swift 6 made the callback main-actor isolated) | Plain global callback function |
+| Event and shortcut names cut short in alerts; "Tray" tab squeezed to "Tr…" | Wider alert sides; tabs keep their full size |
+| Home grew taller with every feature | Fixed-size wide nook, widgets side by side |
 | `swift build` failed to link with the macOS 27 Command Line Tools SDK | Scripts pin the selected Xcode's SDK |
 
 ## 6. Not verified here — please check by hand
@@ -113,6 +128,11 @@ some events need real hardware. These paths are covered by unit tests at the mod
 - [ ] Full-screen video, Mission Control, switching Spaces: shape stays on top and correct.
 - [ ] Close the lid with an external display, then reopen: the app follows the display change.
 - [ ] Sleep with a timer running past its end: alert on wake.
+- [ ] Drag a file onto the notch, drop on Tray; drag it back out to the desktop.
+- [ ] Open Mirror and allow the camera: live preview; camera light goes off when you leave.
+- [ ] Connect Calendar and allow access: next event shows; heads-up 5 minutes before.
+- [ ] Pin a harmless shortcut in Settings › Home and run it from Home.
+- [ ] Press the volume and brightness keys: the notch shows the level.
 
 ## 7. Known limitations
 
@@ -121,4 +141,8 @@ some events need real hardware. These paths are covered by unit tests at the mod
 * The app can't tell which app is using the camera, only that one is.
 * AirPods battery levels are not shown (needs Bluetooth permission and private keys).
 * Not on the Mac App Store.
+* The notch's volume and brightness indicator appears next to macOS's own indicator; macOS has
+  no supported way to hide its own.
+* Not built: other apps' notifications, Lock Screen display, weather and keyboard backlight.
+  See [Research](RESEARCH.md) §5 for why.
 * Tested only on macOS 27. The minimum target is macOS 14; versions 14–26 have not been run.

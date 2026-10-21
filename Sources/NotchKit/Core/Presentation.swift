@@ -24,6 +24,17 @@ public enum IslandAlert: Equatable, Sendable {
     case timerFinished
     /// Shown once on first launch, so a new user sees where the app lives.
     case welcome
+    /// Volume or brightness changed. `value` is 0…1.
+    case level(LevelKind, value: Double, muted: Bool)
+    /// A calendar event is about to start.
+    case upcomingEvent(title: String, minutes: Int)
+    /// A shortcut run from the notch finished.
+    case shortcut(name: String, succeeded: Bool)
+
+    public enum LevelKind: String, Sendable, Hashable {
+        case volume
+        case brightness
+    }
 
     /// Alerts of the same kind replace each other instead of queueing.
     public enum Kind: Hashable, Sendable {
@@ -31,6 +42,9 @@ public enum IslandAlert: Equatable, Sendable {
         case headphones
         case timer
         case app
+        case level
+        case calendar
+        case shortcut
     }
 
     public var kind: Kind {
@@ -39,6 +53,9 @@ public enum IslandAlert: Equatable, Sendable {
         case .headphones: .headphones
         case .timerFinished: .timer
         case .welcome: .app
+        case .level: .level
+        case .upcomingEvent: .calendar
+        case .shortcut: .shortcut
         }
     }
 
@@ -51,6 +68,9 @@ public enum IslandAlert: Equatable, Sendable {
         case .headphones: 3
         case .timerFinished: 600
         case .welcome: 4
+        case .level: 1.6
+        case .upcomingEvent: 8
+        case .shortcut: 2.5
         }
     }
 
@@ -58,11 +78,35 @@ public enum IslandAlert: Equatable, Sendable {
     public var isUrgent: Bool {
         self == .timerFinished
     }
+
+    /// Feedback for something the user just did (volume keys): shown at once, never queued
+    /// behind other alerts, and dropped rather than replayed if something urgent takes over.
+    public var isInstant: Bool {
+        if case .level = self { return true }
+        return false
+    }
+}
+
+/// The tabs of the Home view.
+public enum HomeTab: String, CaseIterable, Sendable, Codable, Hashable {
+    case home
+    case tray
+    case mirror
 }
 
 public enum ExpandTarget: Equatable, Sendable {
     case activity(ActivityKind)
     case home
+    case tray
+    case mirror
+
+    public init(_ tab: HomeTab) {
+        switch tab {
+        case .home: self = .home
+        case .tray: self = .tray
+        case .mirror: self = .mirror
+        }
+    }
 }
 
 /// Everything the pill can look like at a given moment.
@@ -74,13 +118,27 @@ public enum IslandPresentation: Equatable, Sendable {
     case compact(primary: ActivityKind, secondary: ActivityKind?)
     case expanded(ActivityKind)
     case home
+    /// Files dropped on the notch, kept for later.
+    case tray
+    /// Camera preview.
+    case mirror
     case alert(IslandAlert)
     case drop(targeted: Bool)
 
     public var isExpandedFamily: Bool {
         switch self {
-        case .expanded, .home, .alert, .drop: true
+        case .expanded, .home, .tray, .mirror, .alert, .drop: true
         case .hidden, .idle, .compact: false
+        }
+    }
+
+    /// Which Home tab this is, if it is one.
+    public var homeTab: HomeTab? {
+        switch self {
+        case .home: .home
+        case .tray: .tray
+        case .mirror: .mirror
+        default: nil
         }
     }
 
@@ -176,6 +234,10 @@ public enum PresentationResolver {
         switch input.expandTarget {
         case .home:
             return .home
+        case .tray:
+            return .tray
+        case .mirror:
+            return .mirror
         case .activity(let kind) where input.activeActivities.contains(kind):
             return .expanded(kind)
         default:

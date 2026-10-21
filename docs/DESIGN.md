@@ -43,6 +43,25 @@ Drop 100 · Timer done 72. The strip beside the camera stays empty in expanded v
 Displays without a notch get a virtual 180 pt notch at the top centre, drawn only while
 something is showing.
 
+## The nook: Home, Tray and Mirror
+
+Clicking the notch opens a fixed-size "nook", the same size for all three tabs so switching never
+resizes it.
+
+| Element | Large |
+|---|---|
+| Width | 560 (or compact + 40 if wider) |
+| Body below the camera line | 120 |
+| Total height, notch style | notch height + 2 + 120 + 14 = 168 on a 32 pt notch |
+| Tabs | in the strip left of the camera; the selected tab shows its name, others an icon |
+| Battery and Settings | in the strip right of the camera |
+| Home body | media card (210 wide) on the left; calendar, timers and shortcuts as 30 pt rows on the right |
+| Tray body | one scrolling row of 52 pt icons with names, clear button on the right |
+| Mirror body | 16:9 camera preview on the left, message and button on the right |
+
+In the floating pill style the tabs sit in a 24 pt header row inside the pill instead.
+Medium and Small scale all of it.
+
 ## Floating pill style (optional)
 
 | Element | Size | Corner |

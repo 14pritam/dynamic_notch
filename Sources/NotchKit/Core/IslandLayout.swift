@@ -26,6 +26,8 @@ public struct IslandLayout: Equatable, Sendable {
     public var cameraGap: CGFloat
     /// True when the shape is fused to the top edge of the screen.
     public var isAttachedToTop: Bool
+    /// Notch style Home tabs: height of the strip beside the camera that holds the tab header.
+    public var stripHeight: CGFloat
     /// Size multiplier for everything inside the shape (Small / Medium / Large).
     public var contentScale: CGFloat
 
@@ -63,6 +65,7 @@ public struct IslandLayout: Equatable, Sendable {
         self.cameraGap = cameraGap
         self.isAttachedToTop = isAttachedToTop
         self.contentScale = contentScale
+        self.stripHeight = 0
     }
 
     /// The values SwiftUI interpolates during a spring.
@@ -203,6 +206,31 @@ public struct LayoutEngine: Equatable, Sendable {
         }
     }
 
+    /// Volume and brightness use a slimmer shape than other alerts.
+    private func alertBodySize(for alert: IslandAlert) -> CGSize {
+        switch alert {
+        case .upcomingEvent, .shortcut:
+            // Names need room beside the camera.
+            switch style {
+            case .notch:
+                return CGSize(width: baseWidth + 2 * max(earWidth, (IslandMetrics.namedAlertEarWidth * scale).rounded()), height: compactHeight + (6 * scale).rounded())
+            case .island:
+                let base = alertBodySize
+                return CGSize(width: base.width + (60 * scale).rounded(), height: base.height)
+            }
+        case .level:
+            break
+        default:
+            return alertBodySize
+        }
+        switch style {
+        case .notch:
+            return CGSize(width: baseWidth + 2 * max(earWidth, (IslandMetrics.levelEarWidth * scale).rounded()), height: compactHeight)
+        case .island:
+            return CGSize(width: (IslandMetrics.levelPillWidth * scale).rounded(), height: appearance.height)
+        }
+    }
+
     private var alertBodySize: CGSize {
         switch style {
         case .notch:
@@ -225,6 +253,15 @@ public struct LayoutEngine: Equatable, Sendable {
         }
     }
 
+    /// Width of the Home / Tray / Mirror nook.
+    public var nookWidth: CGFloat {
+        let width = (IslandMetrics.Nook.width * scale).rounded()
+        switch style {
+        case .notch: return max(width, compactBodyWidth + 40)
+        case .island: return width
+        }
+    }
+
     private func expandedHeight(content: CGFloat) -> CGFloat {
         switch style {
         case .notch: screen.topInset + IslandMetrics.notchContentGap + content + (IslandMetrics.notchBottomPadding * scale).rounded()
@@ -242,7 +279,7 @@ public struct LayoutEngine: Equatable, Sendable {
 
     private var widestContent: CGFloat {
         max(
-            expandedWidth + 2 * IslandMetrics.expandedFlare,
+            max(expandedWidth, nookWidth) + 2 * IslandMetrics.expandedFlare,
             compactBodyWidth + 2 * (IslandMetrics.compactFlare + bubbleGap + bubbleDiameter + IslandMetrics.hoverGrowth.width),
             alertBodySize.width + 2 * IslandMetrics.compactFlare
         )
@@ -291,16 +328,20 @@ public struct LayoutEngine: Equatable, Sendable {
     }
 
     /// Content height for the expanded family at the current size, nil for compact forms.
-    public func expandedContentHeight(for presentation: IslandPresentation, homeHasMedia: Bool) -> CGFloat? {
-        baseContentHeight(for: presentation, homeHasMedia: homeHasMedia).map { ($0 * scale).rounded() }
+    public func expandedContentHeight(for presentation: IslandPresentation, home: HomeContent) -> CGFloat? {
+        baseContentHeight(for: presentation, home: home).map { ($0 * scale).rounded() }
     }
 
-    private func baseContentHeight(for presentation: IslandPresentation, homeHasMedia: Bool) -> CGFloat? {
+    public func expandedContentHeight(for presentation: IslandPresentation, homeHasMedia: Bool) -> CGFloat? {
+        expandedContentHeight(for: presentation, home: HomeContent(hasMedia: homeHasMedia))
+    }
+
+    private func baseContentHeight(for presentation: IslandPresentation, home: HomeContent) -> CGFloat? {
         switch presentation {
         case .expanded(.nowPlaying): IslandMetrics.ContentHeight.nowPlaying
         case .expanded(.timer): IslandMetrics.ContentHeight.timer
         case .expanded(.call): IslandMetrics.ContentHeight.call
-        case .home: homeHasMedia ? IslandMetrics.ContentHeight.homeWithMedia : IslandMetrics.ContentHeight.home
+        case .home, .tray, .mirror: IslandMetrics.ContentHeight.nook
         case .alert(.timerFinished): IslandMetrics.ContentHeight.timerFinished
         case .drop: IslandMetrics.ContentHeight.drop
         default: nil
@@ -310,9 +351,13 @@ public struct LayoutEngine: Equatable, Sendable {
     // MARK: Layout
 
     public func layout(for presentation: IslandPresentation, homeHasMedia: Bool, hovering: Bool) -> IslandLayout {
+        layout(for: presentation, home: HomeContent(hasMedia: homeHasMedia), hovering: hovering)
+    }
+
+    public func layout(for presentation: IslandPresentation, home: HomeContent, hovering: Bool) -> IslandLayout {
         var layout = switch style {
-        case .notch: notchLayout(for: presentation, homeHasMedia: homeHasMedia)
-        case .island: islandLayout(for: presentation, homeHasMedia: homeHasMedia)
+        case .notch: notchLayout(for: presentation, home: home)
+        case .island: islandLayout(for: presentation, home: home)
         }
         layout.contentScale = scale
 
@@ -346,7 +391,7 @@ public struct LayoutEngine: Equatable, Sendable {
         return layout
     }
 
-    private func notchLayout(for presentation: IslandPresentation, homeHasMedia: Bool) -> IslandLayout {
+    private func notchLayout(for presentation: IslandPresentation, home: HomeContent) -> IslandLayout {
         let centerX = anchorX
         let height = compactHeight
         let compactRadius = min(height * 0.42, 14)
@@ -400,14 +445,27 @@ public struct LayoutEngine: Equatable, Sendable {
                 layout.bubble = CGRect(x: layout.pill.maxX + bubbleGap, y: (height - diameter) / 2, width: diameter, height: diameter)
             }
         case .alert(let alert) where alert != .timerFinished:
-            let size = alertBodySize
+            let size = alertBodySize(for: alert)
             layout.pill = shape(body: size.width, height: size.height, flare: IslandMetrics.compactFlare)
             layout.bottomRadius = min(size.height * 0.42, 16)
             layout.shadow = 0.6
             layout.content = layout.pill.insetBy(dx: IslandMetrics.compactFlare, dy: 0)
             layout.cameraGap = cameraGap
+        case .home, .tray, .mirror:
+            // The tab header lives in the strip beside the camera; widgets sit below it.
+            let width = nookWidth
+            let strip = screen.topInset
+            let body = (IslandMetrics.Nook.body * scale).rounded()
+            let height = strip + IslandMetrics.notchContentGap + body + (IslandMetrics.notchBottomPadding * scale).rounded()
+            layout.pill = shape(body: width, height: height, flare: IslandMetrics.expandedFlare)
+            layout.flare = IslandMetrics.expandedFlare
+            layout.bottomRadius = (IslandMetrics.notchExpandedRadius * scale).rounded()
+            layout.shadow = 1
+            layout.content = CGRect(x: centerX - width / 2, y: 0, width: width, height: strip + IslandMetrics.notchContentGap + body)
+            layout.stripHeight = strip
+            layout.cameraGap = cameraGap
         default:
-            let contentHeight = expandedContentHeight(for: presentation, homeHasMedia: homeHasMedia) ?? IslandMetrics.ContentHeight.timer
+            let contentHeight = expandedContentHeight(for: presentation, home: home) ?? IslandMetrics.ContentHeight.timer
             let width = expandedWidth
             layout.pill = shape(body: width, height: expandedHeight(content: contentHeight), flare: IslandMetrics.expandedFlare)
             layout.flare = IslandMetrics.expandedFlare
@@ -423,7 +481,7 @@ public struct LayoutEngine: Equatable, Sendable {
         return layout
     }
 
-    private func islandLayout(for presentation: IslandPresentation, homeHasMedia: Bool) -> IslandLayout {
+    private func islandLayout(for presentation: IslandPresentation, home: HomeContent) -> IslandLayout {
         let top = pillTop
         func centered(_ size: CGSize) -> CGRect {
             CGRect(x: anchorX - size.width / 2, y: top, width: size.width, height: size.height)
@@ -473,12 +531,13 @@ public struct LayoutEngine: Equatable, Sendable {
                 layout.bubble = CGRect(x: layout.pill.maxX + bubbleGap, y: top, width: size, height: size)
             }
         case .alert(let alert) where alert != .timerFinished:
-            capsule(centered(alertBodySize))
+            capsule(centered(alertBodySize(for: alert)))
             layout.shadow = 0.6
             layout.stroke = 1
         default:
-            let contentHeight = expandedContentHeight(for: presentation, homeHasMedia: homeHasMedia) ?? IslandMetrics.ContentHeight.timer
-            let size = CGSize(width: expandedWidth, height: expandedHeight(content: contentHeight))
+            let contentHeight = expandedContentHeight(for: presentation, home: home) ?? IslandMetrics.ContentHeight.timer
+            let width = presentation.homeTab == nil ? expandedWidth : nookWidth
+            let size = CGSize(width: width, height: expandedHeight(content: contentHeight))
             layout.pill = centered(size)
             let radius = min((IslandMetrics.islandExpandedRadius * scale).rounded(), size.height / 2)
             layout.topRadius = radius

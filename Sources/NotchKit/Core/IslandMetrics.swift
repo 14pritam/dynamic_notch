@@ -45,11 +45,26 @@ public enum IslandMetrics {
         public static let nowPlaying: CGFloat = 140
         public static let timer: CGFloat = 72
         public static let call: CGFloat = 72
-        public static let home: CGFloat = 84
-        public static let homeWithMedia: CGFloat = 144
         public static let drop: CGFloat = 100
         public static let timerFinished: CGFloat = 72
-        public static let maximum: CGFloat = 144
+        /// Floating pill style: the Home/Tray/Mirror nook (header row plus body).
+        public static let nook: CGFloat = 154
+        /// Tallest expanded content in either style; sizes the window.
+        public static let maximum: CGFloat = 154
+    }
+
+    /// The Home, Tray and Mirror tabs share one fixed-size "nook", like the paid notch apps:
+    /// wide and short, with widgets side by side rather than stacked.
+    public enum Nook {
+        public static let width: CGFloat = 560
+        /// Area below the tab header.
+        public static let body: CGFloat = 120
+        /// Floating pill style only; in notch style the header sits beside the camera.
+        public static let header: CGFloat = 24
+        public static let headerGap: CGFloat = 10
+        public static let row: CGFloat = 30
+        public static let rowGap: CGFloat = 8
+        public static let mediaCardWidth: CGFloat = 210
     }
 
     /// Island style: vertical padding above and below expanded content.
@@ -64,6 +79,12 @@ public enum IslandMetrics {
     public static let expandedFlare: CGFloat = 10
     /// Notch style: minimum width of each alert ear, so "Low Battery" fits beside the camera.
     public static let alertEarWidth: CGFloat = 128
+    /// Notch style: ear width for alerts that show a name (calendar events, shortcuts).
+    public static let namedAlertEarWidth: CGFloat = 156
+    /// Notch style: ear width for the volume and brightness indicator.
+    public static let levelEarWidth: CGFloat = 96
+    /// Island style: width of the volume and brightness pill.
+    public static let levelPillWidth: CGFloat = 240
 
     /// Room around the content for the shadow.
     public static let windowMargin: CGFloat = 48
@@ -75,4 +96,31 @@ public enum IslandMetrics {
     public static let hitSlop: CGFloat = 4
     /// Width of the virtual notch on displays without one.
     public static let virtualNotchWidth: CGFloat = 180
+}
+
+/// Which widgets the Home tab shows.
+public struct HomeContent: Equatable, Sendable {
+    public var hasMedia: Bool
+    public var hasEvent: Bool
+    public var hasTimer: Bool
+    public var hasShortcuts: Bool
+
+    public init(hasMedia: Bool = false, hasEvent: Bool = false, hasTimer: Bool = true, hasShortcuts: Bool = false) {
+        self.hasMedia = hasMedia
+        self.hasEvent = hasEvent
+        self.hasTimer = hasTimer
+        self.hasShortcuts = hasShortcuts
+    }
+
+    /// Rows in the widget column (calendar, timer, shortcuts).
+    public var rowCount: Int {
+        [hasEvent, hasTimer, hasShortcuts].filter { $0 }.count
+    }
+
+    /// Every row fits beside the media card without scrolling.
+    public var fitsInNook: Bool {
+        typealias Nook = IslandMetrics.Nook
+        let rows = CGFloat(rowCount)
+        return rows * Nook.row + max(0, rows - 1) * Nook.rowGap <= Nook.body
+    }
 }

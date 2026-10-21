@@ -52,7 +52,7 @@ struct IslandContentLayer: View {
     private var pill: some View {
         ZStack(alignment: .topLeading) {
             if presentation.isVisible {
-                NotchContent(model: model, presentation: presentation, size: layout.content.size, cameraGap: layout.cameraGap)
+                NotchContent(model: model, presentation: presentation, size: layout.content.size, cameraGap: layout.cameraGap, stripHeight: layout.stripHeight)
                     .environment(\.notchScale, layout.contentScale)
                     .frame(width: layout.content.width, height: layout.content.height)
                     .offset(x: layout.content.minX - layout.pill.minX, y: layout.content.minY - layout.pill.minY)
@@ -110,6 +110,8 @@ private struct ContentKey: Hashable {
         case .compact(let primary, _): "compact.\(primary.rawValue)"
         case .expanded(let kind): "expanded.\(kind.rawValue)"
         case .home: "home"
+        case .tray: "tray"
+        case .mirror: "mirror"
         case .alert(let alert): "alert.\(alert.kind)"
         case .drop: "drop"
         }
@@ -122,6 +124,8 @@ struct NotchContent: View {
     let size: CGSize
     /// Width in the middle reserved for the camera.
     let cameraGap: CGFloat
+    /// Notch style Home tabs: height of the strip beside the camera.
+    var stripHeight: CGFloat = 0
 
     var body: some View {
         switch presentation {
@@ -136,7 +140,11 @@ struct NotchContent: View {
         case .expanded(.call):
             CallExpandedView(model: model)
         case .home:
-            HomeView(model: model)
+            NookContainer(model: model, tab: .home, cameraGap: cameraGap, stripHeight: stripHeight) { HomeBody(model: model) }
+        case .tray:
+            NookContainer(model: model, tab: .tray, cameraGap: cameraGap, stripHeight: stripHeight) { TrayBody(model: model) }
+        case .mirror:
+            NookContainer(model: model, tab: .mirror, cameraGap: cameraGap, stripHeight: stripHeight) { MirrorBody(model: model) }
         case .alert(let alert):
             AlertView(model: model, alert: alert, cameraGap: cameraGap)
         case .drop(let targeted):

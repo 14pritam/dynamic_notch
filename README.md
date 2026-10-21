@@ -22,13 +22,23 @@ Here's what it shows:
 - Whatever music is playing, from any app, with the album art and play/pause/skip
 - Timers, counting down right next to the camera
 - Calls on FaceTime, Zoom, Meet, Teams and the rest, with how long you've been on
+- Your next calendar event, plus a heads up 5 minutes before it starts
+- Volume and brightness when you change them
 - A heads up when you plug in your charger or your battery gets low
 - Your AirPods or headphones connecting
-- AirDrop, if you drag files onto the notch
+
+And when you click it, you get a little home base right under the notch:
+
+- **Home** with your music, next event, quick timers and your favourite Shortcuts
+- **Tray**, a handy spot to drop files you'll need again in a minute. Drag files onto the notch
+  to put them there, and drag them back out when you're ready
+- **Mirror**, a quick look at your camera before you hop on a call
+
+Drag files onto the notch and you can also AirDrop them straight from there.
 
 You can make it small, medium or large, whatever looks right on your screen.
 
-It doesn't need an account, doesn't go online and doesn't track anything.
+It doesn't need an account, doesn't go online and doesn't track anything. All of this is free.
 
 ## Installing it
 
@@ -56,13 +66,14 @@ xattr -dr com.apple.quarantine "/Applications/Dynamic Notch.app"
 
 | If you want to | Do this |
 |---|---|
-| Start a timer or see what's playing | Click the notch |
+| Open Home, Tray or Mirror | Click the notch, then pick a tab at the top |
+| Start a timer or run a shortcut | Click the notch, then tap it on Home |
 | See more about something | Click it |
 | Close it | Click anywhere else, or just move your mouse away |
 | Flip between two things | Swipe left or right on it with two fingers |
-| AirDrop some files | Drag them onto the notch |
+| Keep files for later, or AirDrop them | Drag them onto the notch and drop on **Tray** or **AirDrop** |
 | Pause a timer, skip a song, open settings | Right-click the notch |
-| Change the size or turn stuff off | Click the capsule icon in the menu bar, then **Settings…** |
+| Change the size, pick your Shortcuts, turn stuff off | Click the capsule icon in the menu bar, then **Settings…** |
 
 You'll probably want to switch on **Open at login** in Settings so it's always running.
 
@@ -80,9 +91,12 @@ macOS to see what's playing. If Apple ever removes that in an update, music will
 but everything else will keep working.
 
 **Is it safe?** All the code is right here in this repo, so anyone can look through it. The app
-never goes online, doesn't collect anything and doesn't ask for any permissions. That warning
-during install only shows up because I haven't registered the app with Apple yet. I'm planning to
-do that later.
+never goes online and doesn't collect anything. That warning during install only shows up because
+I haven't registered the app with Apple yet. I'm planning to do that later.
+
+**Why is it asking for my camera or calendar?** Only if you use those bits. It asks for the camera
+the first time you open Mirror, and for your calendar when you click Connect. Nothing gets
+recorded or sent anywhere. Say no and everything else keeps working.
 
 **How do I update it?** Download the new version and drag it into Applications again. Replace the
 old one when it asks. Your settings stay put.
@@ -96,6 +110,10 @@ delete `~/Library/Application Support/Dynamic Notch` and
 
 - macOS 14 (Sonoma) or newer
 - Works on Apple silicon and Intel Macs, but it's really made for MacBooks with a notch
+
+## What's new
+
+Check the [changelog](CHANGELOG.md) to see what changed in each version.
 
 ## Want to build it yourself?
 

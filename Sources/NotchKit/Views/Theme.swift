@@ -26,7 +26,7 @@ enum Motion {
             return .spring(duration: 0.4, bounce: 0.1)
         case .idle, .compact:
             return .spring(duration: 0.45, bounce: 0.28)
-        case .expanded, .home, .alert, .drop:
+        case .expanded, .home, .tray, .mirror, .alert, .drop:
             return .spring(duration: 0.5, bounce: 0.25)
         }
     }

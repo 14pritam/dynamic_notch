@@ -23,7 +23,11 @@ Sources/
     │   ├── TimerService            Timer + alarm sound + App Nap guard
     │   ├── CallMonitor             Microphone (Core Audio) and camera (Core Media IO)
     │   ├── AudioRouteMonitor       Bluetooth headphones becoming the output
-    │   └── PowerMonitor            IOKit power-source notifications
+    │   ├── PowerMonitor            IOKit power-source notifications
+    │   ├── TrayStore               Files kept in the tray, saved across launches
+    │   ├── CalendarService         EventKit: next event and 5-minute heads-ups
+    │   ├── ShortcutsService        Lists and runs Shortcuts through /usr/bin/shortcuts
+    │   └── LevelMonitor            Volume (Core Audio) and brightness (DisplayServices) changes
     ├── Island/
     │   ├── IslandModel             Single source of truth: state, gestures, alerts
     │   ├── IslandWindow            Non-activating panel + hosting view
@@ -51,7 +55,8 @@ Debug builds listen for a distributed notification named `DynamicNotch.debug`. I
 command: `timer:<seconds>`, `pause`, `cancel`, `home`, `expand`, `collapse`, `charging`,
 `lowbattery`, `headphones`, `drop`, `target`, `nodrop`, `peek`, `hover`, `unhover`, `swipe`,
 `settings:<tab>`, `idle`, `dismiss`, `size:<small|medium|large>`, `style:<notch|island>`, `welcome`,
-`dump` (writes the model state to `$TMPDIR/DynamicNotch-debug.txt`). Example:
+`dump` (writes the model state to `$TMPDIR/DynamicNotch-debug.txt`), `tray`, `mirror`,
+`trayadd:<path>:<path>`, `volume:<0-1>`, `brightness:<0-1>`, `event`, `shortcutdone`. Example:
 
 ```bash
 osascript -l JavaScript -e 'ObjC.import("Foundation"); $.NSDistributedNotificationCenter.defaultCenter.postNotificationNameObjectUserInfoDeliverImmediately("DynamicNotch.debug", "charging", $(), true)'

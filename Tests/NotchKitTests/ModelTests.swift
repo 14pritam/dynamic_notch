@@ -118,7 +118,7 @@ struct TimerServiceTests {
 @Suite("Island model")
 struct IslandModelTests {
     private func makeModel() -> IslandModel {
-        let model = IslandModel(settings: SettingsStore(defaults: makeDefaults()))
+        let model = IslandModel(settings: SettingsStore(defaults: makeDefaults()), tray: TrayStore(folder: nil))
         model.screen = .sample
         return model
     }
@@ -209,6 +209,9 @@ struct IslandModelTests {
         model.fileDragChanged(isDragging: true, at: CGPoint(x: zone.maxX + 50, y: zone.maxY + 50))
         #expect(model.presentation == .hidden(peek: false))
         model.settings.airDropEnabled = false
+        model.fileDragChanged(isDragging: true, at: CGPoint(x: zone.midX, y: 5))
+        #expect(model.presentation == .drop(targeted: false), "the tray still takes files")
+        model.settings.trayEnabled = false
         model.fileDragChanged(isDragging: true, at: CGPoint(x: zone.midX, y: 5))
         #expect(model.presentation == .hidden(peek: false))
     }

@@ -231,7 +231,7 @@ struct NowPlayingStateTests {
 struct ModelFixTests {
     private func makeModel() -> IslandModel {
         let name = "ModelFixTests.\(UUID().uuidString)"
-        let model = IslandModel(settings: SettingsStore(defaults: UserDefaults(suiteName: name)!))
+        let model = IslandModel(settings: SettingsStore(defaults: UserDefaults(suiteName: name)!), tray: TrayStore(folder: nil))
         model.screen = .sample
         return model
     }

@@ -50,6 +50,13 @@ final class DebugHooks {
         case "size": model.settings.appearance.size = parts.dropFirst().first.flatMap(NotchSize.init(rawValue:)) ?? .large
         case "style": model.settings.appearance.style = parts.dropFirst().first.flatMap(NotchStyle.init(rawValue:)) ?? .notch
         case "welcome": model.receive(.welcome)
+        case "tray": model.showTab(.tray)
+        case "mirror": model.showTab(.mirror)
+        case "trayadd": model.addToTray(parts.dropFirst().map { URL(fileURLWithPath: $0) })
+        case "volume": model.receive(.level(.volume, value: Double(parts.dropFirst().first ?? "") ?? 0.6, muted: false))
+        case "brightness": model.receive(.level(.brightness, value: Double(parts.dropFirst().first ?? "") ?? 0.4, muted: false))
+        case "event": model.receive(.upcomingEvent(title: "Design review", minutes: 5))
+        case "shortcutdone": model.receive(.shortcut(name: "Morning Routine", succeeded: true))
         case "dump":
             let info = model.nowPlaying.info
             let line = "presentation=\(model.presentation) active=\(model.activeActivities.map(\.rawValue).sorted()) "

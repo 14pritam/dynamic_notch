@@ -12,6 +12,11 @@ public final class IslandModel {
     public let calls: CallMonitor
     public let power: PowerMonitor
     public let audioRoute: AudioRouteMonitor
+    public let tray: TrayStore
+    public let calendar: CalendarService
+    public let shortcuts: ShortcutsService
+    public let levels: LevelMonitor
+    let camera = CameraAccess()
 
     public var screen: ScreenMetrics = .sample
     public private(set) var alerts = AlertQueue()
@@ -21,6 +26,15 @@ public final class IslandModel {
     public private(set) var isHoveringNotch = false
     public private(set) var isFileDragNear = false
     public var isDropTargeted = false
+    /// Which half of the drop target the files are over.
+    public private(set) var targetedZone: DropZone?
+    /// True while the user drags a file out of the tray, so it isn't mistaken for a new drop.
+    public var isDraggingFromTray = false
+
+    public enum DropZone: Sendable, Equatable {
+        case tray
+        case airDrop
+    }
     /// True while the Appearance settings are open, so the pill shows for live preview.
     public var isPreviewing = false
 
@@ -42,7 +56,11 @@ public final class IslandModel {
         timer: TimerService = TimerService(),
         calls: CallMonitor = CallMonitor(),
         power: PowerMonitor = PowerMonitor(),
-        audioRoute: AudioRouteMonitor = AudioRouteMonitor()
+        audioRoute: AudioRouteMonitor = AudioRouteMonitor(),
+        tray: TrayStore = TrayStore(),
+        calendar: CalendarService = CalendarService(),
+        shortcuts: ShortcutsService = ShortcutsService(),
+        levels: LevelMonitor = LevelMonitor()
     ) {
         self.settings = settings
         self.nowPlaying = nowPlaying
@@ -50,6 +68,25 @@ public final class IslandModel {
         self.calls = calls
         self.power = power
         self.audioRoute = audioRoute
+        self.tray = tray
+        self.calendar = calendar
+        self.shortcuts = shortcuts
+        self.levels = levels
+
+        calendar.onReminder = { [weak self] event in
+            guard let self, self.settings.calendarEnabled else { return }
+            let minutes = max(0, Int((event.start.timeIntervalSinceNow / 60).rounded()))
+            self.receive(.upcomingEvent(title: event.title, minutes: minutes))
+        }
+        shortcuts.onFinish = { [weak self] name, succeeded in
+            self?.receive(.shortcut(name: name, succeeded: succeeded))
+        }
+        levels.onChange = { [weak self] kind, value, muted in
+            guard let self, self.settings.levelsEnabled else { return }
+            // While an expanded view is open, it stays put; the system indicator still shows.
+            guard self.expandTarget == nil else { return }
+            self.receive(.level(kind, value: value, muted: muted))
+        }
 
         timer.onFinish = { [weak self] in self?.timerDidFinish() }
         power.onAlert = { [weak self] alert in self?.receive(alert) }
@@ -64,6 +101,8 @@ public final class IslandModel {
         calls.start()
         power.start()
         audioRoute.start()
+        calendar.start()
+        levels.start()
         if !settings.hasShownWelcome {
             settings.hasShownWelcome = true
             Task { [weak self] in
@@ -78,6 +117,8 @@ public final class IslandModel {
         calls.stop()
         power.stop()
         audioRoute.stop()
+        calendar.stop()
+        levels.stop()
         alarm.stop()
     }
 
@@ -101,8 +142,8 @@ public final class IslandModel {
             preferredPrimary: preferredPrimary,
             alert: alerts.current,
             expandTarget: expandTarget,
-            isFileDragNear: settings.airDropEnabled && isFileDragNear,
-            isDropTargeted: settings.airDropEnabled && isDropTargeted,
+            isFileDragNear: acceptsFileDrops && isFileDragNear,
+            isDropTargeted: acceptsFileDrops && isDropTargeted,
             showWhenIdle: settings.showWhenIdle,
             isHoveringNotch: isHoveringNotch,
             isPreviewing: isPreviewing
@@ -113,8 +154,45 @@ public final class IslandModel {
         settings.nowPlayingEnabled && nowPlaying.info?.hasContent == true
     }
 
+    /// Files can be dropped on the notch when at least one destination is on.
+    public var acceptsFileDrops: Bool {
+        settings.airDropEnabled || settings.trayEnabled
+    }
+
+    /// The calendar row shows the next event, or a button to connect the calendar.
+    public var showsCalendarRow: Bool {
+        guard settings.calendarEnabled else { return false }
+        switch calendar.access {
+        case .notAsked: return true
+        case .granted: return calendar.nextEvent != nil
+        case .denied: return false
+        }
+    }
+
+    public var favoriteShortcuts: [String] {
+        guard settings.shortcutsEnabled else { return [] }
+        return settings.favoriteShortcuts
+    }
+
+    public var homeContent: HomeContent {
+        HomeContent(
+            hasMedia: homeHasMedia,
+            hasEvent: showsCalendarRow,
+            hasTimer: settings.timerEnabled,
+            hasShortcuts: !favoriteShortcuts.isEmpty
+        )
+    }
+
+    /// Tabs shown at the top of the Home view.
+    public var homeTabs: [HomeTab] {
+        var tabs: [HomeTab] = [.home]
+        if settings.trayEnabled { tabs.append(.tray) }
+        if settings.mirrorEnabled { tabs.append(.mirror) }
+        return tabs
+    }
+
     public var layout: IslandLayout {
-        engine.layout(for: presentation, homeHasMedia: homeHasMedia, hovering: isHoveringPill)
+        engine.layout(for: presentation, home: homeContent, hovering: isHoveringPill)
     }
 
     // MARK: Pointer
@@ -125,7 +203,7 @@ public final class IslandModel {
     public func pointerMoved(to point: CGPoint?) -> Bool {
         let current = presentation
         let engine = engine
-        let resting = engine.layout(for: current, homeHasMedia: homeHasMedia, hovering: false)
+        let resting = engine.layout(for: current, home: homeContent, hovering: false)
         let inside = point.map { point in
             engine.interactiveRects(for: current, layout: resting).contains { $0.contains(point) }
         } ?? false
@@ -147,7 +225,9 @@ public final class IslandModel {
         }
 
         if settings.expandOnHover, inside, case .compact(let primary, _) = current {
-            scheduleHoverExpand(primary)
+            scheduleHoverExpand(.activity(primary))
+        } else if settings.expandOnHover, inside, case .hidden = current {
+            scheduleHoverExpand(.home)
         } else if !inside {
             hoverExpandTask?.cancel()
             hoverExpandTask = nil
@@ -230,14 +310,20 @@ public final class IslandModel {
         }
     }
 
-    private func scheduleHoverExpand(_ kind: ActivityKind) {
+    private func scheduleHoverExpand(_ target: ExpandTarget) {
         guard hoverExpandTask == nil else { return }
         hoverExpandTask = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(450))
             guard !Task.isCancelled, let self else { return }
             self.hoverExpandTask = nil
-            if self.isHoveringPill, case .compact(let primary, _) = self.presentation, primary == kind {
-                self.expand(.activity(kind))
+            switch (target, self.presentation) {
+            case (.activity(let kind), .compact(let primary, _)) where self.isHoveringPill && primary == kind:
+                self.expand(target)
+            case (.home, .hidden) where self.isHoveringNotch:
+                self.expand(.home)
+                self.pointerEnteredExpanded = true
+            default:
+                break
             }
         }
     }
@@ -267,7 +353,9 @@ public final class IslandModel {
         case .charging: settings.chargingAlertsEnabled
         case .lowBattery: settings.lowBatteryAlertsEnabled
         case .headphones: settings.headphoneAlertsEnabled
-        case .timerFinished, .welcome: true
+        case .level: settings.levelsEnabled
+        case .upcomingEvent: settings.calendarEnabled
+        case .timerFinished, .welcome, .shortcut: true
         }
     }
 
@@ -351,20 +439,57 @@ public final class IslandModel {
     // MARK: AirDrop
 
     public func fileDragChanged(isDragging: Bool, at point: CGPoint?) {
-        let near = settings.airDropEnabled && isDragging && (point.map { engine.dropZone.contains($0) } ?? false)
+        if !isDragging {
+            isDraggingFromTray = false
+        }
+        let near = acceptsFileDrops && isDragging && !isDraggingFromTray
+            && (point.map { engine.dropZone.contains($0) } ?? false)
         if near != isFileDragNear {
             isFileDragNear = near
         }
         if !isDragging, isDropTargeted {
-            isDropTargeted = false
+            setTargeted(nil, true)
         }
+    }
+
+    /// Called by each half of the drop target as files move over it.
+    public func setTargeted(_ zone: DropZone?, _ targeted: Bool) {
+        if targeted {
+            targetedZone = zone
+        } else if zone == nil || targetedZone == zone {
+            targetedZone = nil
+        }
+        let any = targetedZone != nil
+        if isDropTargeted != any { isDropTargeted = any }
+    }
+
+    /// Keeps dropped files in the tray and shows them.
+    @discardableResult
+    public func addToTray(_ urls: [URL]) -> Int {
+        isFileDragNear = false
+        setTargeted(nil, false)
+        let added = tray.add(urls)
+        if added > 0 {
+            Haptics.perform(enabled: settings.hapticsEnabled)
+            expand(.tray)
+            pointerEnteredExpanded = true
+        } else {
+            NSSound.beep()
+        }
+        return added
+    }
+
+    public func showTab(_ tab: HomeTab) {
+        if tab == .tray { tray.pruneMissing() }
+        if tab == .mirror { camera.refresh() }
+        expand(ExpandTarget(tab))
     }
 
     /// Sends dropped files with AirDrop. Returns false if AirDrop can't take them.
     @discardableResult
     public func airDrop(_ urls: [URL]) -> Bool {
         isFileDragNear = false
-        isDropTargeted = false
+        setTargeted(nil, false)
         guard !urls.isEmpty, let service = NSSharingService(named: .sendViaAirDrop), service.canPerform(withItems: urls) else {
             log.notice("AirDrop is not available for the dropped items")
             NSSound.beep()
@@ -407,14 +532,18 @@ public final class IslandModel {
         withObservationTracking {
             _ = settings.pausedMediaLinger
             _ = settings.airDropEnabled
+            _ = settings.trayEnabled
+            _ = settings.mirrorEnabled
         } onChange: { [weak self] in
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.nowPlaying.lingerDuration = self.settings.pausedMediaLinger
-                if !self.settings.airDropEnabled {
+                if !self.acceptsFileDrops {
                     self.isFileDragNear = false
-                    self.isDropTargeted = false
+                    self.setTargeted(nil, false)
                 }
+                if case .tray = self.expandTarget, !self.settings.trayEnabled { self.collapse() }
+                if case .mirror = self.expandTarget, !self.settings.mirrorEnabled { self.collapse() }
                 self.observeSettings()
             }
         }

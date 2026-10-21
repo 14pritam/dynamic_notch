@@ -4,7 +4,8 @@
 #   CONFIG=release|debug        default: release
 #   SIGN_IDENTITY="Developer ID Application: Name (TEAMID)"
 #                               default: "-" (ad-hoc, runs only on this Mac)
-#   VERSION=1.0.0 BUILD_NUMBER=1
+#   VERSION=x.y.z               default: the VERSION file
+#   BUILD_NUMBER=n              default: number of commits, so it always goes up
 #   BUNDLE_ID=com.rectircle.DynamicNotch
 #   UNIVERSAL=1                 build for Apple silicon and Intel
 set -euo pipefail
@@ -12,8 +13,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CONFIG="${CONFIG:-release}"
 SIGN_IDENTITY="${SIGN_IDENTITY:--}"
-VERSION="${VERSION:-1.0.0}"
-BUILD_NUMBER="${BUILD_NUMBER:-1}"
+VERSION="${VERSION:-$(tr -d '[:space:]' < "$ROOT/VERSION")}"
+BUILD_NUMBER="${BUILD_NUMBER:-$(git -C "$ROOT" rev-list --count HEAD 2>/dev/null || echo 1)}"
 BUNDLE_ID="${BUNDLE_ID:-com.rectircle.DynamicNotch}"
 APP="$ROOT/build/Dynamic Notch.app"
 
@@ -61,7 +62,7 @@ else
 fi
 # Inside out: the helper library first, then the app.
 codesign "${SIGN_FLAGS[@]}" --sign "$SIGN_IDENTITY" "$APP/Contents/Frameworks/libNotchMediaBridge.dylib"
-codesign "${SIGN_FLAGS[@]}" --sign "$SIGN_IDENTITY" "$APP"
+codesign "${SIGN_FLAGS[@]}" --entitlements "$ROOT/Support/DynamicNotch.entitlements" --sign "$SIGN_IDENTITY" "$APP"
 codesign --verify --deep --strict "$APP"
 
-echo "✓ Built $APP"
+echo "✓ Built $APP ($VERSION, build $BUILD_NUMBER)"

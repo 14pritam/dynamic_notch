@@ -1,95 +1,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-// MARK: Home
-
-/// Opened by clicking the notch or idle pill: last media and quick timers.
-struct HomeView: View {
-    let model: IslandModel
-    @Environment(\.notchScale) private var s
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12 * s) {
-            if model.homeHasMedia {
-                HomeMediaRow(service: model.nowPlaying)
-            }
-            if model.settings.timerEnabled {
-                HStack {
-                    Label("Timer", systemImage: "timer")
-                        .font(.system(size: 13 * s, weight: .semibold))
-                        .foregroundStyle(NotchColor.orange)
-                    Spacer()
-                    settingsButton
-                }
-                HStack(spacing: 6 * s) {
-                    ForEach(TimerService.presets, id: \.self) { preset in
-                        Button(TimeFormatting.presetLabel(seconds: preset)) {
-                            model.startTimer(preset)
-                        }
-                        .buttonStyle(ChipButtonStyle(scale: s))
-                        .accessibilityLabel(Text("Start \(TimeFormatting.spoken(preset)) timer"))
-                    }
-                }
-            } else {
-                HStack {
-                    Text("Nothing live right now")
-                        .font(.system(size: 13 * s, weight: .medium))
-                        .foregroundStyle(NotchColor.secondaryText)
-                    Spacer()
-                    settingsButton
-                }
-            }
-        }
-        .padding(.horizontal, 20 * s)
-        .frame(maxHeight: .infinity)
-    }
-
-    private var settingsButton: some View {
-        Button {
-            model.collapse()
-            model.onOpenSettings?()
-        } label: {
-            Image(systemName: "gearshape.fill")
-                .font(.system(size: 13 * s, weight: .semibold))
-                .foregroundStyle(NotchColor.secondaryText)
-                .frame(width: 24 * s, height: 24 * s)
-        }
-        .buttonStyle(PressableButtonStyle())
-        .accessibilityLabel(Text("Settings"))
-        .help("Settings")
-    }
-}
-
-private struct HomeMediaRow: View {
-    let service: NowPlayingService
-    @Environment(\.notchScale) private var s
-
-    var body: some View {
-        let info = service.info
-        HStack(spacing: 12 * s) {
-            Button { service.openSourceApp() } label: {
-                ArtworkView(artwork: service.artwork, fallbackIcon: service.appIcon, size: 44 * s, cornerRadius: 10 * s)
-            }
-            .buttonStyle(PressableButtonStyle())
-            .accessibilityLabel(Text("Open player"))
-            VStack(alignment: .leading, spacing: 2 * s) {
-                Text(info?.title ?? "")
-                    .font(.system(size: 14 * s, weight: .semibold))
-                    .foregroundStyle(.white)
-                Text(info?.artist ?? "")
-                    .font(.system(size: 12 * s))
-                    .foregroundStyle(NotchColor.secondaryText)
-            }
-            .lineLimit(1)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            GlyphButton(symbol: info?.isPlaying == true ? "pause.fill" : "play.fill", size: 20 * s, label: info?.isPlaying == true ? "Pause" : "Play") {
-                service.togglePlayPause()
-            }
-            GlyphButton(symbol: "forward.fill", size: 16 * s, label: "Next Track") { service.nextTrack() }
-        }
-    }
-}
-
 // MARK: Alerts
 
 struct AlertView: View {
@@ -142,6 +53,59 @@ struct AlertView: View {
                     .foregroundStyle(NotchColor.green)
             }
             .accessibilityElement(children: .combine)
+        case .level(let kind, let value, let muted):
+            AlertRow(cameraGap: cameraGap) {
+                Image(systemName: Self.levelSymbol(kind, value: value, muted: muted))
+                    .font(.system(size: 15 * s, weight: .semibold))
+                    .contentTransition(.symbolEffect(.replace))
+                    .frame(width: 24 * s, alignment: .leading)
+            } trailing: {
+                LevelBar(value: muted ? 0 : value)
+                    .frame(width: 64 * s, height: 6 * s)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text(kind == .volume ? "Volume" : "Brightness"))
+            .accessibilityValue(Text(muted ? "Muted" : "\(Int((value * 100).rounded())) percent"))
+        case .upcomingEvent(let title, let minutes):
+            AlertRow(cameraGap: cameraGap) {
+                HStack(spacing: 6 * s) {
+                    Image(systemName: "calendar")
+                        .foregroundStyle(NotchColor.red)
+                    Text(title)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+            } trailing: {
+                Text(minutes <= 0 ? "Starting now" : "In \(minutes) min")
+                    .foregroundStyle(NotchColor.red)
+            }
+            .accessibilityElement(children: .combine)
+        case .shortcut(let name, let succeeded):
+            AlertRow(cameraGap: cameraGap) {
+                HStack(spacing: 6 * s) {
+                    Image(systemName: "bolt.fill")
+                        .foregroundStyle(NotchColor.blue)
+                    Text(name)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+            } trailing: {
+                Text(succeeded ? "Done" : "Failed")
+                    .foregroundStyle(succeeded ? NotchColor.green : NotchColor.red)
+            }
+            .accessibilityElement(children: .combine)
+        }
+    }
+
+    private static func levelSymbol(_ kind: IslandAlert.LevelKind, value: Double, muted: Bool) -> String {
+        switch kind {
+        case .brightness:
+            return value < 0.5 ? "sun.min.fill" : "sun.max.fill"
+        case .volume:
+            if muted || value <= 0.001 { return "speaker.slash.fill" }
+            if value < 0.34 { return "speaker.wave.1.fill" }
+            if value < 0.67 { return "speaker.wave.2.fill" }
+            return "speaker.wave.3.fill"
         }
     }
 }
@@ -230,41 +194,52 @@ struct DropView: View {
     @Environment(\.notchScale) private var s
 
     var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 24 * s, style: .continuous)
-                .strokeBorder(
-                    NotchColor.blue.opacity(isTargeted ? 0.9 : 0.4),
-                    style: StrokeStyle(lineWidth: 1.5, dash: [6, 5])
-                )
-                .padding(12 * s)
+        HStack(spacing: 10 * s) {
+            if model.settings.trayEnabled {
+                zone(.tray, title: "Tray", targetedTitle: "Keep in Tray", symbol: "tray.and.arrow.down.fill", tint: .white)
+            }
+            if model.settings.airDropEnabled {
+                zone(.airDrop, title: "AirDrop", targetedTitle: "Send with AirDrop", symbol: "dot.radiowaves.up.forward", tint: NotchColor.blue)
+            }
+        }
+        .padding(12 * s)
+    }
+
+    private func zone(_ zone: IslandModel.DropZone, title: LocalizedStringKey, targetedTitle: LocalizedStringKey, symbol: String, tint: Color) -> some View {
+        let targeted = model.targetedZone == zone
+        return ZStack {
+            RoundedRectangle(cornerRadius: 22 * s, style: .continuous)
+                .fill(tint.opacity(targeted ? 0.16 : 0.05))
+            RoundedRectangle(cornerRadius: 22 * s, style: .continuous)
+                .strokeBorder(tint.opacity(targeted ? 0.9 : 0.35), style: StrokeStyle(lineWidth: 1.5, dash: [6, 5]))
             VStack(spacing: 8 * s) {
                 ZStack {
                     Circle()
-                        .fill(NotchColor.blue.opacity(isTargeted ? 0.35 : 0.18))
-                        .frame(width: 46 * s, height: 46 * s)
-                    Image(systemName: "dot.radiowaves.up.forward")
-                        .font(.system(size: 20 * s, weight: .semibold))
-                        .foregroundStyle(NotchColor.blue)
+                        .fill(tint.opacity(targeted ? 0.3 : 0.15))
+                        .frame(width: 40 * s, height: 40 * s)
+                    Image(systemName: symbol)
+                        .font(.system(size: 17 * s, weight: .semibold))
+                        .foregroundStyle(tint)
                 }
-                .scaleEffect(isTargeted ? 1.1 : 1)
-                Text(isTargeted ? "Release to AirDrop" : "Drop to AirDrop")
-                    .font(.system(size: 13 * s, weight: .semibold))
+                .scaleEffect(targeted ? 1.1 : 1)
+                Text(targeted ? targetedTitle : title)
+                    .font(.system(size: 12 * s, weight: .semibold))
                     .foregroundStyle(.white)
             }
         }
-        .animation(.spring(duration: 0.3, bounce: 0.4), value: isTargeted)
+        .animation(.spring(duration: 0.3, bounce: 0.4), value: targeted)
         .contentShape(Rectangle())
         .onDrop(of: [.fileURL], isTargeted: Binding(
-            get: { model.isDropTargeted },
-            set: { model.isDropTargeted = $0 }
+            get: { model.targetedZone == zone },
+            set: { model.setTargeted(zone, $0) }
         )) { providers in
-            loadURLs(from: providers)
+            loadURLs(from: providers, into: zone)
             return true
         }
         .accessibilityElement(children: .combine)
     }
 
-    private func loadURLs(from providers: [NSItemProvider]) {
+    private func loadURLs(from providers: [NSItemProvider], into zone: IslandModel.DropZone) {
         let group = DispatchGroup()
         let collector = URLCollector()
         for provider in providers where provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
@@ -276,7 +251,10 @@ struct DropView: View {
         }
         group.notify(queue: .main) {
             MainActor.assumeIsolated {
-                _ = model.airDrop(collector.urls)
+                switch zone {
+                case .tray: model.addToTray(collector.urls)
+                case .airDrop: model.airDrop(collector.urls)
+                }
             }
         }
     }
@@ -297,5 +275,22 @@ private final class URLCollector: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         return storage
+    }
+}
+
+/// Thin level meter for volume and brightness.
+private struct LevelBar: View {
+    var value: Double
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color.white.opacity(0.22))
+                Capsule()
+                    .fill(Color.white)
+                    .frame(width: geometry.size.width * min(max(value, 0), 1))
+            }
+        }
+        .animation(.spring(duration: 0.2, bounce: 0), value: value)
     }
 }

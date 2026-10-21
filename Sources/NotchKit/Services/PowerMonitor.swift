@@ -1,14 +1,16 @@
 import Foundation
 import IOKit.ps
+import Observation
 
 /// Watches the battery and reports charging and low-battery alerts.
 @MainActor
+@Observable
 public final class PowerMonitor {
-    public var onAlert: ((IslandAlert) -> Void)?
+    @ObservationIgnored public var onAlert: ((IslandAlert) -> Void)?
     public private(set) var snapshot: PowerSnapshot?
 
-    private var source: CFRunLoopSource?
-    private var powerStateObserver: NSObjectProtocol?
+    @ObservationIgnored private var source: CFRunLoopSource?
+    @ObservationIgnored private var powerStateObserver: NSObjectProtocol?
 
     public init() {}
 
@@ -51,7 +53,9 @@ public final class PowerMonitor {
         if let alert = PowerTransitions.alert(from: snapshot, to: new) {
             onAlert?(alert)
         }
-        snapshot = new
+        if snapshot != new {
+            snapshot = new
+        }
     }
 
     static func read() -> PowerSnapshot {

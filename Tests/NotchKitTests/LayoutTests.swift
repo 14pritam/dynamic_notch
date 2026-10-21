@@ -84,7 +84,7 @@ struct NotchLayoutTests {
 
     @Test func expandedContentSitsBelowTheNotch() throws {
         let notch = try #require(screen.notch)
-        for presentation in [IslandPresentation.expanded(.nowPlaying), .home, .drop(targeted: false), .alert(.timerFinished)] {
+        for presentation in [IslandPresentation.expanded(.nowPlaying), .expanded(.timer), .drop(targeted: false), .alert(.timerFinished)] {
             let result = layout(presentation)
             #expect(result.content.minY >= notch.maxY)
             #expect(result.cameraGap == 0)
@@ -93,8 +93,8 @@ struct NotchLayoutTests {
         }
     }
 
-    @Test func homeGrowsWhenThereIsMedia() {
-        #expect(layout(.home, media: true).pill.height > layout(.home, media: false).pill.height)
+    @Test func homeIsTheSameSizeWithOrWithoutMedia() {
+        #expect(layout(.home, media: true).pill == layout(.home, media: false).pill)
     }
 
     @Test func bubbleSitsBesideTheShape() {

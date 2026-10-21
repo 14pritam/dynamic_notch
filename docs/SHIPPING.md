@@ -14,29 +14,30 @@ There are two stages:
 Release assets are always named `DynamicNotch.dmg`, so the README's link
 `releases/latest/download/DynamicNotch.dmg` always points to the newest version.
 
+## Versions and the changelog
+
+* The version lives in the `VERSION` file. It follows semantic versioning: bump the last number
+  for fixes (1.1.0 → 1.1.1), the middle one for new features (1.1.1 → 1.2.0), the first one for
+  big changes that break how people use the app.
+* The build number is the commit count, so it always goes up on its own.
+* Every release gets a section in [CHANGELOG.md](../CHANGELOG.md), written for users. The release
+  script copies that section into the GitHub release notes, so write it the way you'd want people
+  to read it.
+
 ## Making a release now (unsigned)
 
-1. Run the checks:
+1. Change `VERSION`, add the matching `## [x.y.z] - date` section to `CHANGELOG.md`, and commit.
+2. Run the manual checklist in [QA.md](QA.md) on a build of that commit.
+3. Run:
 
    ```bash
-   ./Scripts/check.sh
+   ./Scripts/release.sh
    ```
 
-2. Build the DMG (universal, ad-hoc signed):
-
-   ```bash
-   VERSION=1.0.1 BUILD_NUMBER=2 ./Scripts/make-dmg.sh
-   ```
-
-3. Run the manual checklist in [QA.md](QA.md) on the built app.
-4. Tag and publish (needs the GitHub CLI, `gh`):
-
-   ```bash
-   gh release create v1.0.1 build/DynamicNotch.dmg --title "Dynamic Notch 1.0.1" --notes-file release-notes.md
-   ```
-
-Bump `BUILD_NUMBER` every release and `VERSION` for every user-visible change, and keep them in
-step with the tag.
+The script stops if the working tree isn't committed, the tag already exists, or the changelog
+has no section for the version. Then it runs all checks, builds `build/DynamicNotch.dmg`, tags
+`vX.Y.Z`, pushes, and publishes the GitHub release with the changelog section as its notes (plus
+short install steps for new users).
 
 ### Why downloaded copies still get Now Playing
 
@@ -65,13 +66,16 @@ quarantine flag and keeps the library's signature) and loads that.
 
 ### Release steps
 
+Same as above, with your identity and notarization profile set:
+
 ```bash
-VERSION=1.1.0 BUILD_NUMBER=3 SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" NOTARY_PROFILE=dynamic-notch ./Scripts/make-dmg.sh
+SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" NOTARY_PROFILE=dynamic-notch ./Scripts/release.sh
 ```
 
-The script signs the helper library and the app with hardened runtime and a secure timestamp,
-packages `build/DynamicNotch.dmg`, notarizes it, staples the ticket and runs a Gatekeeper check.
-Publish it with `gh release create` as above, then simplify the README's install section.
+`make-dmg.sh` then signs the helper library and the app with hardened runtime, the camera and
+calendar entitlements and a secure timestamp, notarizes the DMG, staples the ticket and runs a
+Gatekeeper check. After the first signed release, simplify the README's install section and
+the install note the release script adds.
 
 ## Not included yet
 

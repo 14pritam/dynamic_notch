@@ -19,8 +19,14 @@ public struct AlertQueue: Equatable, Sendable {
             return true
         }
         pending.removeAll { $0.kind == alert.kind }
-        if alert.isUrgent, let current, !current.isUrgent {
-            pending.insert(current, at: 0)
+        if alert.isInstant, current?.isUrgent == true {
+            return false
+        }
+        if alert.isUrgent || alert.isInstant, let current, !current.isUrgent {
+            // Instant feedback is stale a moment later, so it is dropped rather than replayed.
+            if !current.isInstant {
+                pending.insert(current, at: 0)
+            }
             self.current = alert
             shownAt = now
             return true
@@ -34,7 +40,7 @@ public struct AlertQueue: Equatable, Sendable {
     @discardableResult
     public mutating func promote(now: Date, allowNonUrgent: Bool) -> Bool {
         guard current == nil else { return false }
-        guard let index = pending.firstIndex(where: { allowNonUrgent || $0.isUrgent }) else { return false }
+        guard let index = pending.firstIndex(where: { allowNonUrgent || $0.isUrgent || $0.isInstant }) else { return false }
         current = pending.remove(at: index)
         shownAt = now
         return true

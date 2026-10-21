@@ -46,6 +46,17 @@ public final class SettingsStore {
     public var chargingAlertsEnabled: Bool { didSet { defaults.set(chargingAlertsEnabled, forKey: Key.charging) } }
     public var lowBatteryAlertsEnabled: Bool { didSet { defaults.set(lowBatteryAlertsEnabled, forKey: Key.lowBattery) } }
     public var headphoneAlertsEnabled: Bool { didSet { defaults.set(headphoneAlertsEnabled, forKey: Key.headphones) } }
+    public var trayEnabled: Bool { didSet { defaults.set(trayEnabled, forKey: Key.tray) } }
+    public var mirrorEnabled: Bool { didSet { defaults.set(mirrorEnabled, forKey: Key.mirror) } }
+    public var calendarEnabled: Bool { didSet { defaults.set(calendarEnabled, forKey: Key.calendar) } }
+    public var shortcutsEnabled: Bool { didSet { defaults.set(shortcutsEnabled, forKey: Key.shortcuts) } }
+    /// Shortcut names pinned to the Home tab, in order.
+    public var favoriteShortcuts: [String] { didSet { defaults.set(favoriteShortcuts, forKey: Key.favoriteShortcuts) } }
+    /// Show volume and brightness changes in the notch.
+    public var levelsEnabled: Bool { didSet { defaults.set(levelsEnabled, forKey: Key.levels) } }
+
+    public static let maximumFavoriteShortcuts = 4
+
     /// Set after the first-launch hint has been shown.
     public var hasShownWelcome: Bool { didSet { defaults.set(hasShownWelcome, forKey: Key.welcome) } }
     /// How long a paused track stays in the pill.
@@ -81,8 +92,26 @@ public final class SettingsStore {
         lowBatteryAlertsEnabled = defaults.object(forKey: Key.lowBattery) as? Bool ?? true
         headphoneAlertsEnabled = defaults.object(forKey: Key.headphones) as? Bool ?? true
         hasShownWelcome = defaults.bool(forKey: Key.welcome)
+        trayEnabled = defaults.object(forKey: Key.tray) as? Bool ?? true
+        mirrorEnabled = defaults.object(forKey: Key.mirror) as? Bool ?? true
+        calendarEnabled = defaults.object(forKey: Key.calendar) as? Bool ?? true
+        shortcutsEnabled = defaults.object(forKey: Key.shortcuts) as? Bool ?? true
+        favoriteShortcuts = Array((defaults.stringArray(forKey: Key.favoriteShortcuts) ?? []).prefix(Self.maximumFavoriteShortcuts))
+        levelsEnabled = defaults.object(forKey: Key.levels) as? Bool ?? true
         let linger = defaults.object(forKey: Key.linger) as? Double ?? 30
         pausedMediaLinger = Self.lingerChoices.contains(linger) ? linger : 30
+    }
+
+    /// Pins or unpins a shortcut on the Home tab. Returns false when the list is full.
+    @discardableResult
+    public func toggleFavorite(_ name: String) -> Bool {
+        if let index = favoriteShortcuts.firstIndex(of: name) {
+            favoriteShortcuts.remove(at: index)
+            return true
+        }
+        guard favoriteShortcuts.count < Self.maximumFavoriteShortcuts else { return false }
+        favoriteShortcuts.append(name)
+        return true
     }
 
     public func resetAppearance() {
@@ -114,5 +143,11 @@ public final class SettingsStore {
         static let headphones = "alert.headphones"
         static let linger = "nowPlaying.pausedLinger"
         static let welcome = "app.hasShownWelcome"
+        static let tray = "home.tray"
+        static let mirror = "home.mirror"
+        static let calendar = "home.calendar"
+        static let shortcuts = "home.shortcuts"
+        static let favoriteShortcuts = "home.favoriteShortcuts"
+        static let levels = "alert.levels"
     }
 }

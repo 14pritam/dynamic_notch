@@ -100,3 +100,29 @@ reliable way to do it.
   permission prompt.
 * Metal shader compilation is not available without an extra Xcode download, so the liquid
   effect uses SwiftUI `Canvas` filters, not a custom shader.
+
+## 5. What the paid notch apps charge for (researched for 1.1.0)
+
+| Feature | Sold in | Dynamic Notch |
+|---|---|---|
+| Now Playing with controls | NotchNook ($25), Alcove ($14), DynamicLake Pro ($14–17), MediaMate (~$7) | ✅ since 1.0 |
+| File tray / shelf | NotchNook (Tray), DynamicLake (DynaClip, DynaDrop) | ✅ 1.1 |
+| AirDrop by dropping on the notch | NotchNook | ✅ since 1.0 |
+| Mirror (camera preview) | NotchNook | ✅ 1.1 |
+| Calendar: next event and alerts | NotchNook, Alcove, DynamicLake (DynaGlance) | ✅ 1.1 |
+| Run Shortcuts | NotchNook | ✅ 1.1 |
+| Volume and brightness indicator | Alcove, DynamicLake (DynaKeys), MediaMate | ✅ 1.1 (shown alongside the macOS indicator) |
+| Calls and meetings | DynamicLake | ✅ since 1.0 |
+| AirPods / Bluetooth connect | DynamicLake (DynaConnect) | ✅ since 1.0 |
+| Timer / focus timer | DynamicLake | ✅ since 1.0 |
+| Battery status | Alcove | ✅ 1.1 (in Home) |
+| Open on hover, swipe gestures | NotchNook, Alcove | ✅ |
+| Size and look customisation | All | ✅ |
+| Other apps' notifications in the notch | Alcove, DynamicLake | ❌ needs Accessibility access to read Notification Center; fragile across macOS versions |
+| Showing on the Lock Screen | Alcove, DynamicLake | ❌ needs private window-server tricks |
+| Weather | DynamicLake (DynaGlance) | ❌ needs the internet; the app works fully offline |
+| Hiding the macOS volume indicator | MediaMate | ❌ no supported way; the notch indicator shows next to it |
+| Keyboard backlight control | MediaMate | ❌ no public API |
+
+Prices are from reviews and store pages in October 2026 and may change.
+
