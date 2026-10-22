@@ -58,6 +58,9 @@ resizes it.
 | Home body | media card (210 wide) on the left; calendar, timers and shortcuts as 30 pt rows on the right |
 | Tray body | one scrolling row of 52 pt icons with names, clear button on the right |
 | Mirror body | 16:9 camera preview on the left, message and button on the right |
+| Clipboard body | one scrolling row of 150 pt text cards (4 lines, app and age below), clear button on the right |
+| Notes body | one text area filling the body; the panel takes the keyboard only while this tab is open |
+| Focus | indigo (Focus) and green (Break) versions of the timer; same shapes as the orange timer |
 
 In the floating pill style the tabs sit in a 24 pt header row inside the pill instead.
 Medium and Small scale all of it.

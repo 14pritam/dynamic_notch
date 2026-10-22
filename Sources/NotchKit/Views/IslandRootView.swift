@@ -111,6 +111,8 @@ private struct ContentKey: Hashable {
         case .expanded(let kind): "expanded.\(kind.rawValue)"
         case .home: "home"
         case .tray: "tray"
+        case .clipboard: "clipboard"
+        case .notes: "notes"
         case .mirror: "mirror"
         case .alert(let alert): "alert.\(alert.kind)"
         case .drop: "drop"
@@ -143,6 +145,10 @@ struct NotchContent: View {
             NookContainer(model: model, tab: .home, cameraGap: cameraGap, stripHeight: stripHeight) { HomeBody(model: model) }
         case .tray:
             NookContainer(model: model, tab: .tray, cameraGap: cameraGap, stripHeight: stripHeight) { TrayBody(model: model) }
+        case .clipboard:
+            NookContainer(model: model, tab: .clipboard, cameraGap: cameraGap, stripHeight: stripHeight) { ClipboardBody(model: model) }
+        case .notes:
+            NookContainer(model: model, tab: .notes, cameraGap: cameraGap, stripHeight: stripHeight) { NotesBody(model: model) }
         case .mirror:
             NookContainer(model: model, tab: .mirror, cameraGap: cameraGap, stripHeight: stripHeight) { MirrorBody(model: model) }
         case .alert(let alert):

@@ -50,7 +50,12 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
         if let timer = model.timer.timer, model.timer.isActive {
             let remaining = TimeFormatting.clock(timer.remaining(at: Date()), roundingUp: true)
-            let status = NSMenuItem(title: timer.isPaused ? "Timer paused · \(remaining)" : "Timer · \(remaining) left", action: nil, keyEquivalent: "")
+            let name = switch timer.mode {
+            case .plain: String(localized: "Timer")
+            case .focus: String(localized: "Focus")
+            case .rest: String(localized: "Break")
+            }
+            let status = NSMenuItem(title: timer.isPaused ? "\(name) paused · \(remaining)" : "\(name) · \(remaining) left", action: nil, keyEquivalent: "")
             status.isEnabled = false
             menu.addItem(status)
             menu.addItem(action(timer.isPaused ? "Resume Timer" : "Pause Timer") { [weak self] in self?.model.timer.togglePause() })
@@ -66,6 +71,9 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             start.submenu = submenu
             start.isEnabled = model.settings.timerEnabled
             menu.addItem(start)
+            let focus = action("Start Focus (\(model.settings.focusMinutes) min)") { [weak self] in self?.model.startSession(.focus) }
+            focus.isEnabled = model.settings.timerEnabled
+            menu.addItem(focus)
         }
         menu.addItem(action("Open Notch") { [weak self] in self?.model.expand(.home) })
 

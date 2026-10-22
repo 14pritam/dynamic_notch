@@ -87,8 +87,20 @@ struct GeneralSettingsView: View {
                 Toggle("Haptic feedback", isOn: $settings.hapticsEnabled)
             }
 
-            Section("Timer") {
+            Section {
                 Toggle("Play a sound when a timer ends", isOn: $settings.timerSound)
+                Picker("Focus session", selection: $settings.focusMinutes) {
+                    ForEach(SettingsStore.focusChoices, id: \.self) { Text("\($0) minutes").tag($0) }
+                }
+                Picker("Break", selection: $settings.breakMinutes) {
+                    ForEach(SettingsStore.breakChoices, id: \.self) { Text("\($0) minutes").tag($0) }
+                }
+            } header: {
+                Text("Timer")
+            } footer: {
+                Text("Focus in Home starts a session. When it ends, the notch offers a break, then the next session.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
@@ -280,11 +292,13 @@ struct HomeSettingsView: View {
         Form {
             Section {
                 IconToggle(title: "File Tray", detail: "Drop files on the notch to keep them for later", symbol: "tray.full.fill", color: .cyan, isOn: $settings.trayEnabled)
+                IconToggle(title: "Clipboard", detail: "Text you copied recently. Passwords are skipped, nothing is saved", symbol: "doc.on.clipboard.fill", color: .orange, isOn: $settings.clipboardEnabled)
+                IconToggle(title: "Notes", detail: "A quick scratchpad, saved as you type", symbol: "note.text", color: .yellow, isOn: $settings.notesEnabled)
                 IconToggle(title: "Mirror", detail: "A quick camera preview before calls", symbol: "person.crop.square.fill", color: .purple, isOn: $settings.mirrorEnabled)
             } header: {
                 Text("Tabs")
             } footer: {
-                Text("Click the notch to open Home. Tray and Mirror appear as tabs next to it.")
+                Text("Click the notch to open Home. The others appear as tabs next to it.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

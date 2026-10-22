@@ -29,9 +29,12 @@ Here's what it shows:
 
 And when you click it, you get a little home base right under the notch:
 
-- **Home** with your music, next event, quick timers and your favourite Shortcuts
+- **Home** with your music, next event, quick timers, a Focus timer and your favourite Shortcuts
 - **Tray**, a handy spot to drop files you'll need again in a minute. Drag files onto the notch
   to put them there, and drag them back out when you're ready
+- **Clipboard**, the last few things you copied. Click one to copy it again. Passwords are
+  skipped and nothing is saved
+- **Notes**, a little scratchpad for phone numbers, to-dos, whatever
 - **Mirror**, a quick look at your camera before you hop on a call
 
 Drag files onto the notch and you can also AirDrop them straight from there.
@@ -66,10 +69,10 @@ xattr -dr com.apple.quarantine "/Applications/Dynamic Notch.app"
 
 | If you want to | Do this |
 |---|---|
-| Open Home, Tray or Mirror | Click the notch, then pick a tab at the top |
-| Start a timer or run a shortcut | Click the notch, then tap it on Home |
+| Open Home, Tray, Clipboard, Notes or Mirror | Click the notch, then pick a tab at the top |
+| Start a timer, a focus session or a shortcut | Click the notch, then tap it on Home |
 | See more about something | Click it |
-| Close it | Click anywhere else, or just move your mouse away |
+| Close it | Click anywhere else, or just move your mouse away (Notes stays open until you click away or press Escape) |
 | Flip between two things | Swipe left or right on it with two fingers |
 | Keep files for later, or AirDrop them | Drag them onto the notch and drop on **Tray** or **AirDrop** |
 | Pause a timer, skip a song, open settings | Right-click the notch |
@@ -97,6 +100,10 @@ I haven't registered the app with Apple yet. I'm planning to do that later.
 **Why is it asking for my camera or calendar?** Only if you use those bits. It asks for the camera
 the first time you open Mirror, and for your calendar when you click Connect. Nothing gets
 recorded or sent anywhere. Say no and everything else keeps working.
+
+**Does it keep what I copy?** Only while the app is running, and only the last 20 bits of text.
+It's never written to disk, and anything a password manager marks as private is skipped. Don't
+want it at all? Turn off Clipboard in Settings and it stops watching right away.
 
 **How do I update it?** Download the new version and drag it into Applications again. Replace the
 old one when it asks. Your settings stay put.

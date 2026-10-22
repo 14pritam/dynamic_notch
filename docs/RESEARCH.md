@@ -126,3 +126,31 @@ reliable way to do it.
 
 Prices are from reviews and store pages in October 2026 and may change.
 
+## 6. More competitors (researched for 1.2.0)
+
+A second look, past the four big paid apps, at what free and newer notch apps add.
+
+| App | Price | What it adds |
+|---|---|---|
+| Boring Notch | Free, open source | Music with visualizer, calendar, file shelf with AirDrop, HUD replacement, battery, mirror |
+| Atoll | Free, open source | System stats, clipboard history, color picker, timers, Focus and screen-recording indicators, lock screen widgets |
+| NotchNest | One time purchase | Clipboard with search and pinning, quick notes, Pomodoro timer |
+| Itchy | Free | Twelve modules including Pomodoro, notes, clipboard, mail |
+| NotchBox | Paid | Clipboard, Pomodoro, notes, water tracking, bookmarks |
+| NotchDodo | Paid | Clipboard history that skips password-manager copies, focus sounds |
+| ComfyNotch | Free, open source | Widgets, music, brightness and volume |
+| QuakeNotch | Freemium | A terminal that slides down from the notch |
+| DropNotch | Free | AirDrop, Mail and Messages drop zone |
+
+**Picked for 1.2.0**, because almost every newer app has them and they fit a small, quiet nook:
+
+| Feature | Seen in | Dynamic Notch |
+|---|---|---|
+| Clipboard history | Atoll, NotchNest, Itchy, NotchBox, NotchDodo | ✅ Text only, last 20, memory only, private copies skipped |
+| Quick notes | NotchNest, Itchy, NotchBox, Crest | ✅ One scratchpad, saved as you type |
+| Pomodoro / focus timer | NotchNest, Itchy, NotchBox, NotchFlow | ✅ Focus then break, built on the existing timer |
+
+**Left out on purpose:** system stats, color picker, terminal, water tracking and bookmarks (niche,
+and each one adds clutter to a small space); weather and AI features (need the internet);
+Focus-mode and screen-recording indicators (no public API).
+

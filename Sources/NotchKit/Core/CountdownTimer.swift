@@ -1,5 +1,22 @@
 import Foundation
 
+/// What a timer is for. Focus sessions and their breaks are timers that offer the next step
+/// when they end.
+public enum TimerMode: String, Equatable, Sendable {
+    case plain
+    case focus
+    case rest
+
+    /// The step offered when this one ends.
+    public var next: TimerMode? {
+        switch self {
+        case .plain: nil
+        case .focus: .rest
+        case .rest: .focus
+        }
+    }
+}
+
 /// The pill's own timer. A value type with an injected clock so it can be
 /// tested without waiting.
 public struct CountdownTimer: Equatable, Sendable {
@@ -11,13 +28,15 @@ public struct CountdownTimer: Equatable, Sendable {
 
     public private(set) var duration: TimeInterval
     public private(set) var phase: Phase
+    public let mode: TimerMode
 
     public static let minimumDuration: TimeInterval = 1
     public static let maximumDuration: TimeInterval = 24 * 3600
 
-    public init(duration: TimeInterval, now: Date) {
+    public init(duration: TimeInterval, now: Date, mode: TimerMode = .plain) {
         let clamped = min(max(duration, Self.minimumDuration), Self.maximumDuration)
         self.duration = clamped
+        self.mode = mode
         self.phase = .running(endDate: now.addingTimeInterval(clamped))
     }
 

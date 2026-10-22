@@ -7,11 +7,38 @@ enum NotchColor {
     static let red = Color(red: 1, green: 69 / 255, blue: 58 / 255)
     static let yellow = Color(red: 1, green: 214 / 255, blue: 10 / 255)
     static let blue = Color(red: 10 / 255, green: 132 / 255, blue: 1)
+    static let indigo = Color(red: 125 / 255, green: 122 / 255, blue: 1)
     static let secondaryText = Color.white.opacity(0.55)
     static let buttonFill = Color.white.opacity(0.18)
 
     static func accent(_ rgb: ColorMath.RGB) -> Color {
         Color(red: rgb.red, green: rgb.green, blue: rgb.blue)
+    }
+}
+
+extension TimerMode {
+    var tint: Color {
+        switch self {
+        case .plain: NotchColor.orange
+        case .focus: NotchColor.indigo
+        case .rest: NotchColor.green
+        }
+    }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .plain: "Timer"
+        case .focus: "Focus"
+        case .rest: "Break"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .plain: "timer"
+        case .focus: "brain.head.profile.fill"
+        case .rest: "cup.and.saucer.fill"
+        }
     }
 }
 
@@ -26,7 +53,7 @@ enum Motion {
             return .spring(duration: 0.4, bounce: 0.1)
         case .idle, .compact:
             return .spring(duration: 0.45, bounce: 0.28)
-        case .expanded, .home, .tray, .mirror, .alert, .drop:
+        case .expanded, .home, .tray, .clipboard, .notes, .mirror, .alert, .drop:
             return .spring(duration: 0.5, bounce: 0.25)
         }
     }

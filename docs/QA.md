@@ -54,6 +54,10 @@ Each state was triggered on the real notch with debug-build commands and checked
 | Tray: empty state, files with thumbnails, count badge | ✅ |
 | Mirror: camera prompt (camera itself not switched on during QA) | ✅ |
 | Drop target with Tray and AirDrop halves | ✅ |
+| Clipboard: cards, app name and age, clear button (1.2) | ✅ |
+| Notes: placeholder, text cursor shows when opened (1.2) | ✅ |
+| Focus: chip in Home, indigo countdown, "Take a break" alert with Break and Stop (1.2) | ✅ |
+| Home timer row fits at Small and Large with the Focus chip (1.2) | ✅ |
 | Volume indicator from a real volume change | ✅ |
 | Brightness indicator from a real brightness change | ✅ (after fix) |
 | Calendar heads-up and shortcut-finished alerts | ✅ |
@@ -130,6 +134,11 @@ some events need real hardware. These paths are covered by unit tests at the mod
 - [ ] Sleep with a timer running past its end: alert on wake.
 - [ ] Drag a file onto the notch, drop on Tray; drag it back out to the desktop.
 - [ ] Open Mirror and allow the camera: live preview; camera light goes off when you leave.
+- [ ] Copy some text, open Clipboard, click a card, paste it somewhere.
+- [ ] Copy a password from a password manager: it must not show up in Clipboard.
+- [ ] Open Notes, type, press Escape: the app you were in still gets your typing afterwards.
+- [ ] Quit and reopen: the note is still there.
+- [ ] Start Focus, let it run out (or set it short in a debug build): Break and Stop work.
 - [ ] Connect Calendar and allow access: next event shows; heads-up 5 minutes before.
 - [ ] Pin a harmless shortcut in Settings › Home and run it from Home.
 - [ ] Press the volume and brightness keys: the notch shows the level.

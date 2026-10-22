@@ -1,7 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// Borderless panel above the menu bar that never takes focus.
+/// Borderless panel above the menu bar. It never activates the app, and only takes the keyboard
+/// while Notes is open.
 final class IslandPanel: NSPanel {
     init() {
         super.init(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
@@ -20,7 +21,10 @@ final class IslandPanel: NSPanel {
         setAccessibilityLabel("Dynamic Notch")
     }
 
-    override var canBecomeKey: Bool { false }
+    /// True while a view in the panel needs typing (Notes).
+    var acceptsKeyboard = false
+
+    override var canBecomeKey: Bool { acceptsKeyboard }
     override var canBecomeMain: Bool { false }
 
     // The panel sits over the menu bar on purpose.

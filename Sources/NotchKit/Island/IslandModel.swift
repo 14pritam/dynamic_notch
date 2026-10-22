@@ -16,6 +16,8 @@ public final class IslandModel {
     public let calendar: CalendarService
     public let shortcuts: ShortcutsService
     public let levels: LevelMonitor
+    public let clipboard: ClipboardMonitor
+    public let notes: NotesStore
     let camera = CameraAccess()
 
     public var screen: ScreenMetrics = .sample
@@ -60,7 +62,9 @@ public final class IslandModel {
         tray: TrayStore = TrayStore(),
         calendar: CalendarService = CalendarService(),
         shortcuts: ShortcutsService = ShortcutsService(),
-        levels: LevelMonitor = LevelMonitor()
+        levels: LevelMonitor = LevelMonitor(),
+        clipboard: ClipboardMonitor = ClipboardMonitor(),
+        notes: NotesStore = NotesStore()
     ) {
         self.settings = settings
         self.nowPlaying = nowPlaying
@@ -72,6 +76,8 @@ public final class IslandModel {
         self.calendar = calendar
         self.shortcuts = shortcuts
         self.levels = levels
+        self.clipboard = clipboard
+        self.notes = notes
 
         calendar.onReminder = { [weak self] event in
             guard let self, self.settings.calendarEnabled else { return }
@@ -103,6 +109,7 @@ public final class IslandModel {
         audioRoute.start()
         calendar.start()
         levels.start()
+        if settings.clipboardEnabled { clipboard.start() }
         if !settings.hasShownWelcome {
             settings.hasShownWelcome = true
             Task { [weak self] in
@@ -119,6 +126,8 @@ public final class IslandModel {
         audioRoute.stop()
         calendar.stop()
         levels.stop()
+        clipboard.stop()
+        notes.save()
         alarm.stop()
     }
 
@@ -187,6 +196,8 @@ public final class IslandModel {
     public var homeTabs: [HomeTab] {
         var tabs: [HomeTab] = [.home]
         if settings.trayEnabled { tabs.append(.tray) }
+        if settings.clipboardEnabled { tabs.append(.clipboard) }
+        if settings.notesEnabled { tabs.append(.notes) }
         if settings.mirrorEnabled { tabs.append(.mirror) }
         return tabs
     }
@@ -219,7 +230,7 @@ public final class IslandModel {
                 pointerEnteredExpanded = true
                 collapseTask?.cancel()
                 collapseTask = nil
-            } else if pointerEnteredExpanded, settings.collapseOnPointerExit, expandTarget != nil {
+            } else if pointerEnteredExpanded, settings.collapseOnPointerExit, expandTarget != nil, expandTarget != .notes {
                 scheduleCollapse()
             }
         }
@@ -285,6 +296,7 @@ public final class IslandModel {
         collapseTask = nil
         pointerEnteredExpanded = false
         guard expandTarget != nil else { return }
+        if expandTarget == .notes { notes.save() }
         expandTarget = nil
         pumpAlerts()
     }
@@ -397,6 +409,22 @@ public final class IslandModel {
         stopAlarmIfNeeded()
         timer.start(duration: duration)
         collapse()
+    }
+
+    /// Starts a focus session, or the break after one, with the lengths from Settings.
+    public func startSession(_ mode: TimerMode) {
+        let minutes = switch mode {
+        case .focus: settings.focusMinutes
+        case .rest: settings.breakMinutes
+        case .plain: 0
+        }
+        guard minutes > 0 else { return }
+        alarm.stop()
+        alerts.removeAll(of: .timer)
+        timer.start(duration: TimeInterval(minutes * 60), mode: mode)
+        collapse()
+        pumpAlerts()
+        scheduleAlertExpiry()
     }
 
     public func cancelTimer() {
@@ -534,6 +562,8 @@ public final class IslandModel {
             _ = settings.airDropEnabled
             _ = settings.trayEnabled
             _ = settings.mirrorEnabled
+            _ = settings.clipboardEnabled
+            _ = settings.notesEnabled
         } onChange: { [weak self] in
             Task { @MainActor [weak self] in
                 guard let self else { return }
@@ -544,6 +574,13 @@ public final class IslandModel {
                 }
                 if case .tray = self.expandTarget, !self.settings.trayEnabled { self.collapse() }
                 if case .mirror = self.expandTarget, !self.settings.mirrorEnabled { self.collapse() }
+                if case .clipboard = self.expandTarget, !self.settings.clipboardEnabled { self.collapse() }
+                if case .notes = self.expandTarget, !self.settings.notesEnabled { self.collapse() }
+                if self.settings.clipboardEnabled {
+                    self.clipboard.start()
+                } else {
+                    self.clipboard.stop()
+                }
                 self.observeSettings()
             }
         }

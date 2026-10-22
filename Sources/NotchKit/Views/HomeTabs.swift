@@ -1,7 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-// The Home, Tray and Mirror tabs share one fixed-size nook (IslandMetrics.Nook): wide and short,
+// The Home, Tray, Clipboard, Notes and Mirror tabs share one fixed-size nook (IslandMetrics.Nook): wide and short,
 // widgets side by side. In notch style the tab header sits in the strip beside the camera.
 
 // MARK: Container
@@ -91,6 +91,8 @@ private struct NookTabs: View {
         switch tab {
         case .home: "Home"
         case .tray: "Tray"
+        case .clipboard: "Clipboard"
+        case .notes: "Notes"
         case .mirror: "Mirror"
         }
     }
@@ -99,6 +101,8 @@ private struct NookTabs: View {
         switch tab {
         case .home: "house.fill"
         case .tray: "tray.full.fill"
+        case .clipboard: "doc.on.clipboard.fill"
+        case .notes: "note.text"
         case .mirror: "person.crop.square.fill"
         }
     }
@@ -313,6 +317,16 @@ private struct TimerPresetsRow: View {
                 .buttonStyle(ChipButtonStyle(scale: s))
                 .accessibilityLabel(Text("Start \(TimeFormatting.spoken(preset)) timer"))
             }
+            Button {
+                model.startSession(.focus)
+            } label: {
+                Label("Focus", systemImage: TimerMode.focus.symbol)
+                    .labelStyle(.titleAndIcon)
+            }
+            .buttonStyle(ChipButtonStyle(tint: TimerMode.focus.tint, scale: s))
+            .frame(width: 78 * s)
+            .help("Focus for \(model.settings.focusMinutes) minutes, then take a \(model.settings.breakMinutes) minute break")
+            .accessibilityLabel(Text("Start a \(model.settings.focusMinutes) minute focus session"))
         }
     }
 }

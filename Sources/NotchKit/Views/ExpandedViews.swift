@@ -133,25 +133,26 @@ struct TimerExpandedView: View {
     var body: some View {
         let timer = model.timer.timer
         let isPaused = timer?.isPaused == true
+        let mode = timer?.mode ?? .plain
         HStack(spacing: 12 * s) {
             CircleButton(
                 symbol: isPaused ? "play.fill" : "pause.fill",
                 size: 48 * s,
-                foreground: NotchColor.orange,
-                background: NotchColor.orange.opacity(0.25),
+                foreground: mode.tint,
+                background: mode.tint.opacity(0.25),
                 label: isPaused ? "Resume Timer" : "Pause Timer"
             ) { model.timer.togglePause() }
             CircleButton(symbol: "xmark", size: 48 * s, label: "Cancel Timer") { model.cancelTimer() }
             Spacer(minLength: 8 * s)
             VStack(alignment: .trailing, spacing: -4 * s) {
-                Text("Timer")
+                Text(mode.title)
                     .font(.system(size: 13 * s, weight: .semibold))
-                    .foregroundStyle(NotchColor.orange)
+                    .foregroundStyle(mode.tint)
                 if let timer {
                     CountdownText(timer: timer)
                         .font(.system(size: 42 * s, weight: .light))
                         .monospacedDigit()
-                        .foregroundStyle(NotchColor.orange)
+                        .foregroundStyle(mode.tint)
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
                 }

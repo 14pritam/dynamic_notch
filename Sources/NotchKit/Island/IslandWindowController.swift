@@ -30,6 +30,7 @@ public final class IslandWindowController {
         installMonitors()
         observeEnvironment()
         observeLayout()
+        observeKeyboard()
         panel.orderFrontRegardless()
     }
 
@@ -103,6 +104,26 @@ public final class IslandWindowController {
                 }
                 self.observeLayout()
             }
+        }
+    }
+
+    /// Notes takes the keyboard while it's open and hands it straight back when it closes.
+    /// The panel never activates the app, so the app you were in stays in front.
+    private func observeKeyboard() {
+        let wantsKeyboard = model.presentation == .notes
+        if wantsKeyboard {
+            panel.acceptsKeyboard = true
+            panel.makeKey()
+        } else {
+            if panel.isKeyWindow {
+                panel.resignKey()
+            }
+            panel.acceptsKeyboard = false
+        }
+        withObservationTracking {
+            _ = model.presentation == .notes
+        } onChange: { [weak self] in
+            Task { @MainActor [weak self] in self?.observeKeyboard() }
         }
     }
 

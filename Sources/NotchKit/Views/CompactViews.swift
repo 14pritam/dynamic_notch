@@ -38,10 +38,11 @@ struct CompactView: View {
             )
             .accessibilityLabel(Text(model.nowPlaying.info?.title ?? ""))
         case .timer:
-            Image(systemName: "timer")
+            let mode = model.timer.timer?.mode ?? .plain
+            Image(systemName: mode.symbol)
                 .font(.system(size: scale.fontSize + 1, weight: .semibold))
-                .foregroundStyle(NotchColor.orange)
-                .accessibilityLabel(Text("Timer"))
+                .foregroundStyle(mode.tint)
+                .accessibilityLabel(Text(mode.title))
         case .call:
             if let session = model.calls.session, !session.isCall {
                 AppIconView(icon: model.calls.appIcon, symbol: "mic.fill", tint: NotchColor.orange, size: scale.icon)
@@ -69,7 +70,7 @@ struct CompactView: View {
                 CountdownText(timer: timer)
                     .font(.system(size: scale.fontSize, weight: .semibold))
                     .monospacedDigit()
-                    .foregroundStyle(NotchColor.orange.opacity(timer.isPaused ? 0.6 : 1))
+                    .foregroundStyle(timer.mode.tint.opacity(timer.isPaused ? 0.6 : 1))
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
             }
@@ -115,7 +116,7 @@ struct MinimalView: View {
     }
 }
 
-/// Orange ring that empties as the timer runs.
+/// Ring that empties as the timer runs, in the timer's colour.
 private struct TimerRing: View {
     let model: IslandModel
     let diameter: CGFloat
@@ -123,15 +124,16 @@ private struct TimerRing: View {
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             let progress = model.timer.timer?.progress(at: context.date) ?? 0
+            let mode = model.timer.timer?.mode ?? .plain
             ZStack {
-                Circle().stroke(NotchColor.orange.opacity(0.25), lineWidth: 2.5)
+                Circle().stroke(mode.tint.opacity(0.25), lineWidth: 2.5)
                 Circle()
                     .trim(from: 0, to: 1 - progress)
-                    .stroke(NotchColor.orange, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                    .stroke(mode.tint, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
                     .rotationEffect(.degrees(-90))
-                Image(systemName: "timer")
+                Image(systemName: mode.symbol)
                     .font(.system(size: diameter * 0.42, weight: .bold))
-                    .foregroundStyle(NotchColor.orange)
+                    .foregroundStyle(mode.tint)
             }
             .frame(width: diameter, height: diameter)
         }

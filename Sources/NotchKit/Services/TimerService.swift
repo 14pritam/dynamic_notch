@@ -9,7 +9,7 @@ public final class TimerService {
     public private(set) var lastDuration: TimeInterval?
 
     /// Quick starts shown in the pill.
-    public static let presets: [TimeInterval] = [60, 300, 600, 900, 1800]
+    public static let presets: [TimeInterval] = [300, 600, 900, 1800]
     /// Quick starts shown in the menu bar menu, which has more room.
     public static let menuPresets: [TimeInterval] = [60, 180, 300, 600, 900, 1800, 3600]
 
@@ -38,10 +38,13 @@ public final class TimerService {
         return !timer.isFinished
     }
 
-    public func start(duration: TimeInterval) {
-        let started = CountdownTimer(duration: duration, now: now())
+    /// Focus sessions and breaks are started on their own and never become "Repeat".
+    public func start(duration: TimeInterval, mode: TimerMode = .plain) {
+        let started = CountdownTimer(duration: duration, now: now(), mode: mode)
         timer = started
-        lastDuration = started.duration
+        if mode == .plain {
+            lastDuration = started.duration
+        }
         scheduleCompletion()
     }
 

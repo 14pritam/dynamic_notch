@@ -91,6 +91,8 @@ public enum IslandAlert: Equatable, Sendable {
 public enum HomeTab: String, CaseIterable, Sendable, Codable, Hashable {
     case home
     case tray
+    case clipboard
+    case notes
     case mirror
 }
 
@@ -98,12 +100,16 @@ public enum ExpandTarget: Equatable, Sendable {
     case activity(ActivityKind)
     case home
     case tray
+    case clipboard
+    case notes
     case mirror
 
     public init(_ tab: HomeTab) {
         switch tab {
         case .home: self = .home
         case .tray: self = .tray
+        case .clipboard: self = .clipboard
+        case .notes: self = .notes
         case .mirror: self = .mirror
         }
     }
@@ -120,6 +126,10 @@ public enum IslandPresentation: Equatable, Sendable {
     case home
     /// Files dropped on the notch, kept for later.
     case tray
+    /// Recently copied text.
+    case clipboard
+    /// A quick scratchpad.
+    case notes
     /// Camera preview.
     case mirror
     case alert(IslandAlert)
@@ -127,7 +137,7 @@ public enum IslandPresentation: Equatable, Sendable {
 
     public var isExpandedFamily: Bool {
         switch self {
-        case .expanded, .home, .tray, .mirror, .alert, .drop: true
+        case .expanded, .home, .tray, .clipboard, .notes, .mirror, .alert, .drop: true
         case .hidden, .idle, .compact: false
         }
     }
@@ -137,6 +147,8 @@ public enum IslandPresentation: Equatable, Sendable {
         switch self {
         case .home: .home
         case .tray: .tray
+        case .clipboard: .clipboard
+        case .notes: .notes
         case .mirror: .mirror
         default: nil
         }
@@ -236,6 +248,10 @@ public enum PresentationResolver {
             return .home
         case .tray:
             return .tray
+        case .clipboard:
+            return .clipboard
+        case .notes:
+            return .notes
         case .mirror:
             return .mirror
         case .activity(let kind) where input.activeActivities.contains(kind):

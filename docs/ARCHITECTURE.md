@@ -25,6 +25,8 @@ Sources/
     │   ├── AudioRouteMonitor       Bluetooth headphones becoming the output
     │   ├── PowerMonitor            IOKit power-source notifications
     │   ├── TrayStore               Files kept in the tray, saved across launches
+    │   ├── ClipboardMonitor        Copied text, in memory only; skips private copies
+    │   ├── NotesStore              The Notes scratchpad, saved to preferences
     │   ├── CalendarService         EventKit: next event and 5-minute heads-ups
     │   ├── ShortcutsService        Lists and runs Shortcuts through /usr/bin/shortcuts
     │   └── LevelMonitor            Volume (Core Audio) and brightness (DisplayServices) changes

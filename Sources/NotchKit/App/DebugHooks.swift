@@ -52,6 +52,10 @@ final class DebugHooks {
         case "welcome": model.receive(.welcome)
         case "tray": model.showTab(.tray)
         case "mirror": model.showTab(.mirror)
+        case "clipboard": model.showTab(.clipboard)
+        case "notes": model.showTab(.notes)
+        case "focus": if let seconds = parts.dropFirst().first.flatMap(Double.init) { model.timer.start(duration: seconds, mode: .focus) } else { model.startSession(.focus) }
+        case "break": model.startSession(.rest)
         case "trayadd": model.addToTray(parts.dropFirst().map { URL(fileURLWithPath: $0) })
         case "volume": model.receive(.level(.volume, value: Double(parts.dropFirst().first ?? "") ?? 0.6, muted: false))
         case "brightness": model.receive(.level(.brightness, value: Double(parts.dropFirst().first ?? "") ?? 0.4, muted: false))

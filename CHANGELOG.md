@@ -5,6 +5,21 @@ Every release of Dynamic Notch, newest first. The format follows
 [Semantic Versioning](https://semver.org/): new features bump the middle number, fixes bump the
 last one.
 
+## [Unreleased]
+
+### Added
+- **Clipboard.** A new tab with the last 20 things you copied. Click one to copy it again.
+  Passwords from password managers are skipped, and the history is never saved to disk.
+- **Notes.** A new tab with a quick scratchpad. It saves as you type and stays open while you
+  write. Press Escape or click outside to close it.
+- **Focus sessions.** Tap Focus in Home for a 25 minute session. When it ends, the notch offers a
+  5 minute break, then the next session. You can change both lengths in Settings.
+- Start Focus from the menu bar too.
+
+### Changed
+- The quick timers in Home are now 5, 10, 15 and 30 minutes, to make room for Focus. The 1 minute
+  timer is still in the menu bar.
+
 ## [1.1.0] - 2026-10-21
 
 ### Added

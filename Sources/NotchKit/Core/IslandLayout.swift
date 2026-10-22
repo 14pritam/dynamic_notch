@@ -341,7 +341,7 @@ public struct LayoutEngine: Equatable, Sendable {
         case .expanded(.nowPlaying): IslandMetrics.ContentHeight.nowPlaying
         case .expanded(.timer): IslandMetrics.ContentHeight.timer
         case .expanded(.call): IslandMetrics.ContentHeight.call
-        case .home, .tray, .mirror: IslandMetrics.ContentHeight.nook
+        case .home, .tray, .clipboard, .notes, .mirror: IslandMetrics.ContentHeight.nook
         case .alert(.timerFinished): IslandMetrics.ContentHeight.timerFinished
         case .drop: IslandMetrics.ContentHeight.drop
         default: nil
@@ -451,7 +451,7 @@ public struct LayoutEngine: Equatable, Sendable {
             layout.shadow = 0.6
             layout.content = layout.pill.insetBy(dx: IslandMetrics.compactFlare, dy: 0)
             layout.cameraGap = cameraGap
-        case .home, .tray, .mirror:
+        case .home, .tray, .clipboard, .notes, .mirror:
             // The tab header lives in the strip beside the camera; widgets sit below it.
             let width = nookWidth
             let strip = screen.topInset

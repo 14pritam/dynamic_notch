@@ -157,11 +157,20 @@ private struct TimerFinishedView: View {
     let model: IslandModel
     @Environment(\.notchScale) private var s
 
+    private static func headline(_ mode: TimerMode) -> LocalizedStringKey {
+        switch mode {
+        case .plain: "Done"
+        case .focus: "Take a break"
+        case .rest: "Back to it"
+        }
+    }
+
     var body: some View {
+        let mode = model.timer.timer?.mode ?? .plain
         HStack(spacing: 12 * s) {
             Image(systemName: "bell.fill")
                 .font(.system(size: 24 * s, weight: .semibold))
-                .foregroundStyle(NotchColor.orange)
+                .foregroundStyle(mode.tint)
                 .phaseAnimator([0.0, -16, 14, -10, 8, 0, 0, 0]) { bell, angle in
                     bell.rotationEffect(.degrees(angle), anchor: .top)
                 } animation: { _ in
@@ -169,16 +178,25 @@ private struct TimerFinishedView: View {
                 }
                 .frame(width: 44 * s)
             VStack(alignment: .leading, spacing: 0) {
-                Text("Timer")
+                Text(mode.title)
                     .font(.system(size: 13 * s, weight: .semibold))
-                    .foregroundStyle(NotchColor.orange)
-                Text("Done")
+                    .foregroundStyle(mode.tint)
+                Text(Self.headline(mode))
                     .font(.system(size: 26 * s, weight: .semibold))
                     .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
             Spacer(minLength: 8 * s)
-            CircleButton(symbol: "arrow.counterclockwise", size: 48 * s, label: "Repeat Timer") { model.repeatTimer() }
-            CircleButton(symbol: "xmark", size: 48 * s, foreground: .black, background: NotchColor.orange, label: "Stop Timer") {
+            if let next = mode.next {
+                // Focus offers the break, and the break offers the next focus session.
+                CircleButton(symbol: next.symbol, size: 48 * s, foreground: next.tint, background: next.tint.opacity(0.25), label: next == .rest ? "Start Break" : "Focus Again") {
+                    model.startSession(next)
+                }
+            } else {
+                CircleButton(symbol: "arrow.counterclockwise", size: 48 * s, label: "Repeat Timer") { model.repeatTimer() }
+            }
+            CircleButton(symbol: "xmark", size: 48 * s, foreground: .black, background: mode.tint, label: "Stop Timer") {
                 model.stopTimerAlarm()
             }
         }

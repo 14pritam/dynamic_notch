@@ -48,6 +48,12 @@ public final class SettingsStore {
     public var headphoneAlertsEnabled: Bool { didSet { defaults.set(headphoneAlertsEnabled, forKey: Key.headphones) } }
     public var trayEnabled: Bool { didSet { defaults.set(trayEnabled, forKey: Key.tray) } }
     public var mirrorEnabled: Bool { didSet { defaults.set(mirrorEnabled, forKey: Key.mirror) } }
+    /// Keep a history of copied text (memory only, passwords skipped).
+    public var clipboardEnabled: Bool { didSet { defaults.set(clipboardEnabled, forKey: Key.clipboard) } }
+    public var notesEnabled: Bool { didSet { defaults.set(notesEnabled, forKey: Key.notes) } }
+    /// Focus session length and the break after it, in minutes.
+    public var focusMinutes: Int { didSet { defaults.set(focusMinutes, forKey: Key.focusMinutes) } }
+    public var breakMinutes: Int { didSet { defaults.set(breakMinutes, forKey: Key.breakMinutes) } }
     public var calendarEnabled: Bool { didSet { defaults.set(calendarEnabled, forKey: Key.calendar) } }
     public var shortcutsEnabled: Bool { didSet { defaults.set(shortcutsEnabled, forKey: Key.shortcuts) } }
     /// Shortcut names pinned to the Home tab, in order.
@@ -56,6 +62,8 @@ public final class SettingsStore {
     public var levelsEnabled: Bool { didSet { defaults.set(levelsEnabled, forKey: Key.levels) } }
 
     public static let maximumFavoriteShortcuts = 4
+    public static let focusChoices = [15, 25, 45, 50, 60]
+    public static let breakChoices = [5, 10, 15]
 
     /// Set after the first-launch hint has been shown.
     public var hasShownWelcome: Bool { didSet { defaults.set(hasShownWelcome, forKey: Key.welcome) } }
@@ -94,6 +102,12 @@ public final class SettingsStore {
         hasShownWelcome = defaults.bool(forKey: Key.welcome)
         trayEnabled = defaults.object(forKey: Key.tray) as? Bool ?? true
         mirrorEnabled = defaults.object(forKey: Key.mirror) as? Bool ?? true
+        clipboardEnabled = defaults.object(forKey: Key.clipboard) as? Bool ?? true
+        notesEnabled = defaults.object(forKey: Key.notes) as? Bool ?? true
+        let focus = defaults.object(forKey: Key.focusMinutes) as? Int ?? 25
+        focusMinutes = Self.focusChoices.contains(focus) ? focus : 25
+        let rest = defaults.object(forKey: Key.breakMinutes) as? Int ?? 5
+        breakMinutes = Self.breakChoices.contains(rest) ? rest : 5
         calendarEnabled = defaults.object(forKey: Key.calendar) as? Bool ?? true
         shortcutsEnabled = defaults.object(forKey: Key.shortcuts) as? Bool ?? true
         favoriteShortcuts = Array((defaults.stringArray(forKey: Key.favoriteShortcuts) ?? []).prefix(Self.maximumFavoriteShortcuts))
@@ -145,6 +159,10 @@ public final class SettingsStore {
         static let welcome = "app.hasShownWelcome"
         static let tray = "home.tray"
         static let mirror = "home.mirror"
+        static let clipboard = "home.clipboard"
+        static let notes = "home.notes"
+        static let focusMinutes = "timer.focusMinutes"
+        static let breakMinutes = "timer.breakMinutes"
         static let calendar = "home.calendar"
         static let shortcuts = "home.shortcuts"
         static let favoriteShortcuts = "home.favoriteShortcuts"
