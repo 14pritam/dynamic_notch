@@ -280,25 +280,44 @@ public final class CallMonitor {
         }
     }
 
-    private struct CameraListener {
+    /// Same approach as `AudioHW.listen`: the function-pointer API, so removal really removes.
+    private final class CameraListener {
         let object: CMIOObjectID
         let address: CMIOObjectPropertyAddress
-        let block: CMIOObjectPropertyListenerBlock
+        private var context: UnsafeMutableRawPointer?
 
         init?(object: CMIOObjectID, selector: CMIOObjectPropertySelector, handler: @escaping @MainActor () -> Void) {
             var address = CallMonitor.cameraAddress(selector)
-            let block: CMIOObjectPropertyListenerBlock = { _, _ in
-                MainActor.assumeIsolated { handler() }
+            let pointer = Unmanaged.passRetained(ListenerContext(handler: handler)).toOpaque()
+            guard CMIOObjectAddPropertyListener(object, &address, cameraListenerProc, pointer) == noErr else {
+                Unmanaged<ListenerContext>.fromOpaque(pointer).release()
+                return nil
             }
-            guard CMIOObjectAddPropertyListenerBlock(object, &address, .main, block) == noErr else { return nil }
             self.object = object
             self.address = address
-            self.block = block
+            context = pointer
         }
 
         func remove() {
+            guard let context else { return }
+            self.context = nil
             var address = address
-            CMIOObjectRemovePropertyListenerBlock(object, &address, .main, block)
+            CMIOObjectRemovePropertyListener(object, &address, cameraListenerProc, context)
+            Unmanaged<ListenerContext>.fromOpaque(context).release()
         }
+
+        deinit { remove() }
     }
+
+}
+
+private func cameraListenerProc(
+    _ object: CMIOObjectID,
+    _ count: UInt32,
+    _ addresses: UnsafePointer<CMIOObjectPropertyAddress>?,
+    _ context: UnsafeMutableRawPointer?
+) -> OSStatus {
+    guard let context else { return noErr }
+    Unmanaged<ListenerContext>.fromOpaque(context).takeUnretainedValue().fire()
+    return noErr
 }

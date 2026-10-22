@@ -90,6 +90,10 @@ enum AudioHW {
     }
 
     /// Registers a listener that runs on the main queue. Returns a token for removal.
+    ///
+    /// This uses the function-pointer API, not the block one: a Swift closure is bridged to a new
+    /// block each time it's passed, so `AudioObjectRemovePropertyListenerBlock` never matched and
+    /// listeners piled up on every device change until the app spun at full CPU.
     @discardableResult
     static func listen(
         _ object: AudioObjectID,
@@ -97,21 +101,62 @@ enum AudioHW {
         handler: @escaping @MainActor () -> Void
     ) -> Listener? {
         var address = address
-        let block: AudioObjectPropertyListenerBlock = { _, _ in
-            MainActor.assumeIsolated { handler() }
+        let context = ListenerContext(handler: handler)
+        let pointer = Unmanaged.passRetained(context).toOpaque()
+        guard AudioObjectAddPropertyListener(object, &address, audioListenerProc, pointer) == noErr else {
+            Unmanaged<ListenerContext>.fromOpaque(pointer).release()
+            return nil
         }
-        guard AudioObjectAddPropertyListenerBlock(object, &address, .main, block) == noErr else { return nil }
-        return Listener(object: object, address: address, block: block)
+        return Listener(object: object, address: address, context: pointer)
     }
 
-    struct Listener {
+    final class Listener {
         let object: AudioObjectID
         let address: AudioObjectPropertyAddress
-        let block: AudioObjectPropertyListenerBlock
+        private var context: UnsafeMutableRawPointer?
 
+        init(object: AudioObjectID, address: AudioObjectPropertyAddress, context: UnsafeMutableRawPointer) {
+            self.object = object
+            self.address = address
+            self.context = context
+        }
+
+        /// Safe to call more than once.
         func remove() {
+            guard let context else { return }
+            self.context = nil
             var address = address
-            AudioObjectRemovePropertyListenerBlock(object, &address, .main, block)
+            AudioObjectRemovePropertyListener(object, &address, audioListenerProc, context)
+            Unmanaged<ListenerContext>.fromOpaque(context).release()
+        }
+
+        deinit { remove() }
+    }
+}
+
+/// What a property listener calls. Core Audio and Core Media IO call listeners on their own
+/// threads, so the handler is sent to the main queue.
+final class ListenerContext: @unchecked Sendable {
+    let handler: @MainActor () -> Void
+
+    init(handler: @escaping @MainActor () -> Void) {
+        self.handler = handler
+    }
+
+    func fire() {
+        DispatchQueue.main.async { [self] in
+            MainActor.assumeIsolated { handler() }
         }
     }
+}
+
+private func audioListenerProc(
+    _ object: AudioObjectID,
+    _ count: UInt32,
+    _ addresses: UnsafePointer<AudioObjectPropertyAddress>,
+    _ context: UnsafeMutableRawPointer?
+) -> OSStatus {
+    guard let context else { return noErr }
+    Unmanaged<ListenerContext>.fromOpaque(context).takeUnretainedValue().fire()
+    return noErr
 }

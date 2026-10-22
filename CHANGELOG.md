@@ -23,6 +23,11 @@ last one.
 - The quick timers in Home are now 5, 10, 15 and 30 minutes, to make room for Focus. The 1 minute
   timer is still in the menu bar.
 
+### Fixed
+- After a while (sooner if you connect headphones or join calls often) the app could get stuck
+  using a full CPU core and stop responding, including the menu bar icon. It now cleans up after
+  itself every time your audio devices change.
+
 ## [1.1.0] - 2026-10-21
 
 ### Added
