@@ -94,6 +94,11 @@ public enum HomeTab: String, CaseIterable, Sendable, Codable, Hashable {
     case clipboard
     case notes
     case mirror
+
+    /// Shown to the right of the camera, beside Settings; the rest sit on the left.
+    public var sitsRight: Bool {
+        self == .notes || self == .mirror
+    }
 }
 
 public enum ExpandTarget: Equatable, Sendable {

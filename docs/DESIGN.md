@@ -54,7 +54,7 @@ resizes it.
 | Body below the camera line | 120 |
 | Total height, notch style | notch height + 2 + 120 + 14 = 168 on a 32 pt notch |
 | Tabs | in the strip left of the camera; the selected tab shows its name, others an icon |
-| Battery and Settings | in the strip right of the camera |
+| Tabs | Home, Tray and Clipboard left of the camera; Notes, Mirror and Settings right of it. Each side gets exactly half the room; if the selected tab's name doesn't fit, every tab on that side shows just its icon |
 | Home body | media card (210 wide) on the left; calendar, timers and shortcuts as 30 pt rows on the right |
 | Tray body | one scrolling row of 52 pt icons with names, clear button on the right |
 | Mirror body | 16:9 camera preview on the left, message and button on the right |

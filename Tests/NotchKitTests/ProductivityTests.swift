@@ -200,6 +200,11 @@ struct ProductivityModelTests {
         model.cancelTimer()
     }
 
+    @Test func tabsSplitAroundTheCamera() {
+        #expect(HomeTab.allCases.filter { !$0.sitsRight } == [.home, .tray, .clipboard])
+        #expect(HomeTab.allCases.filter(\.sitsRight) == [.notes, .mirror])
+    }
+
     @Test func nookTabsShareOneSize() {
         let engine = LayoutEngine(screen: .sample, appearance: .standard)
         let sizes = [IslandPresentation.home, .clipboard, .notes].map { engine.layout(for: $0, home: HomeContent(), hovering: false).pill.size }

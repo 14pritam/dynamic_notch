@@ -17,6 +17,9 @@ last one.
 - Start Focus from the menu bar too.
 
 ### Changed
+- The tabs now sit on both sides of the camera (Notes and Mirror next to Settings), so none of
+  them can end up hidden behind it.
+- The battery is gone from the top of Home, since it's already in your menu bar.
 - The quick timers in Home are now 5, 10, 15 and 30 minutes, to make room for Focus. The 1 minute
   timer is still in the menu bar.
 

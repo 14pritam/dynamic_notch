@@ -17,24 +17,23 @@ struct NookContainer<Content: View>: View {
     @Environment(\.notchScale) private var s
 
     var body: some View {
+        let tabs = model.homeTabs
         VStack(spacing: 0) {
-            if stripHeight > 0 {
-                HStack(spacing: 0) {
-                    NookTabs(model: model, selected: tab)
-                    Spacer(minLength: cameraGap + 12 * s)
-                    NookStatus(model: model)
+            // Each side of the camera gets exactly half of what's left, so nothing can slide
+            // under the camera however many tabs are on.
+            HStack(spacing: 0) {
+                NookTabs(model: model, tabs: tabs.filter { !$0.sitsRight }, selected: tab)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Color.clear
+                    .frame(width: stripHeight > 0 ? cameraGap + 12 * s : 8 * s)
+                HStack(spacing: 4 * s) {
+                    NookTabs(model: model, tabs: tabs.filter(\.sitsRight), selected: tab)
+                    SettingsButton(model: model)
                 }
-                .frame(height: stripHeight)
-                .padding(.bottom, IslandMetrics.notchContentGap)
-            } else {
-                HStack(spacing: 0) {
-                    NookTabs(model: model, selected: tab)
-                    Spacer(minLength: 8 * s)
-                    NookStatus(model: model)
-                }
-                .frame(height: IslandMetrics.Nook.header * s)
-                .padding(.bottom, IslandMetrics.Nook.headerGap * s)
+                .frame(maxWidth: .infinity, alignment: .trailing)
             }
+            .frame(height: stripHeight > 0 ? stripHeight : IslandMetrics.Nook.header * s)
+            .padding(.bottom, stripHeight > 0 ? IslandMetrics.notchContentGap : IslandMetrics.Nook.headerGap * s)
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
@@ -43,48 +42,67 @@ struct NookContainer<Content: View>: View {
     }
 }
 
-/// Home / Tray / Mirror. The selected tab shows its name; the others are just icons.
+/// A row of tabs. The selected tab shows its name when there's room; if there isn't, every tab
+/// is just an icon, so the row never runs into the camera.
 private struct NookTabs: View {
     let model: IslandModel
+    let tabs: [HomeTab]
     let selected: HomeTab
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            row(showsTitle: true)
+            row(showsTitle: false)
+        }
+    }
+
+    private func row(showsTitle: Bool) -> some View {
+        HStack(spacing: 4) {
+            ForEach(tabs, id: \.self) { tab in
+                NookTabButton(model: model, tab: tab, isSelected: tab == selected, showsTitle: showsTitle)
+            }
+        }
+        .fixedSize()
+    }
+}
+
+private struct NookTabButton: View {
+    let model: IslandModel
+    let tab: HomeTab
+    let isSelected: Bool
+    let showsTitle: Bool
     @Environment(\.notchScale) private var s
 
     var body: some View {
-        HStack(spacing: 4 * s) {
-            ForEach(model.homeTabs, id: \.self) { tab in
-                let isSelected = tab == selected
-                Button {
-                    model.showTab(tab)
-                } label: {
-                    HStack(spacing: 4 * s) {
-                        Image(systemName: Self.symbol(tab))
-                            .font(.system(size: 11 * s, weight: .semibold))
-                        if isSelected {
-                            Text(Self.title(tab))
-                                .font(.system(size: 11 * s, weight: .semibold))
-                        }
-                        if tab == .tray, !model.tray.items.isEmpty {
-                            Text("\(model.tray.items.count)")
-                                .font(.system(size: 9 * s, weight: .bold))
-                                .monospacedDigit()
-                                .foregroundStyle(isSelected ? .black : .white)
-                                .padding(.horizontal, 4 * s)
-                                .background(Capsule().fill(isSelected ? Color.white : NotchColor.buttonFill))
-                        }
-                    }
-                    .foregroundStyle(isSelected ? .white : NotchColor.secondaryText)
-                    .padding(.horizontal, 8 * s)
-                    .frame(height: 22 * s)
-                    .background(Capsule().fill(isSelected ? NotchColor.buttonFill : Color.clear))
-                    .contentShape(Capsule())
+        Button {
+            model.showTab(tab)
+        } label: {
+            HStack(spacing: 4 * s) {
+                Image(systemName: Self.symbol(tab))
+                    .font(.system(size: 11 * s, weight: .semibold))
+                if isSelected, showsTitle {
+                    Text(Self.title(tab))
+                        .font(.system(size: 11 * s, weight: .semibold))
                 }
-                .buttonStyle(PressableButtonStyle())
-                .fixedSize()
-                .help(Text(Self.title(tab)))
-                .accessibilityLabel(Text(Self.title(tab)))
-                .accessibilityAddTraits(isSelected ? .isSelected : [])
+                if tab == .tray, !model.tray.items.isEmpty {
+                    Text("\(model.tray.items.count)")
+                        .font(.system(size: 9 * s, weight: .bold))
+                        .monospacedDigit()
+                        .foregroundStyle(isSelected ? .black : .white)
+                        .padding(.horizontal, 4 * s)
+                        .background(Capsule().fill(isSelected ? Color.white : NotchColor.buttonFill))
+                }
             }
+            .foregroundStyle(isSelected ? .white : NotchColor.secondaryText)
+            .padding(.horizontal, 8 * s)
+            .frame(height: 22 * s)
+            .background(Capsule().fill(isSelected ? NotchColor.buttonFill : Color.clear))
+            .contentShape(Capsule())
         }
+        .buttonStyle(PressableButtonStyle())
+        .help(Text(Self.title(tab)))
+        .accessibilityLabel(Text(Self.title(tab)))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     static func title(_ tab: HomeTab) -> LocalizedStringKey {
@@ -108,44 +126,24 @@ private struct NookTabs: View {
     }
 }
 
-/// Battery and Settings, on the right of the strip.
-private struct NookStatus: View {
+/// Settings, at the far right of the strip.
+private struct SettingsButton: View {
     let model: IslandModel
     @Environment(\.notchScale) private var s
 
     var body: some View {
-        HStack(spacing: 8 * s) {
-            if let battery = model.power.snapshot, battery.hasBattery {
-                HStack(spacing: 4 * s) {
-                    Text("\(battery.level)%")
-                        .font(.system(size: 11 * s, weight: .semibold))
-                        .monospacedDigit()
-                        .foregroundStyle(NotchColor.secondaryText)
-                    BatteryGlyph(level: battery.level, isCharging: battery.isCharging, color: Self.batteryColor(battery), width: 22 * s)
-                }
-                .fixedSize()
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(Text("Battery \(battery.level) percent"))
-            }
-            Button {
-                model.collapse()
-                model.onOpenSettings?()
-            } label: {
-                Image(systemName: "gearshape.fill")
-                    .font(.system(size: 12 * s, weight: .semibold))
-                    .foregroundStyle(NotchColor.secondaryText)
-                    .frame(width: 22 * s, height: 22 * s)
-            }
-            .buttonStyle(PressableButtonStyle())
-            .accessibilityLabel(Text("Settings"))
-            .help("Settings")
+        Button {
+            model.collapse()
+            model.onOpenSettings?()
+        } label: {
+            Image(systemName: "gearshape.fill")
+                .font(.system(size: 12 * s, weight: .semibold))
+                .foregroundStyle(NotchColor.secondaryText)
+                .frame(width: 22 * s, height: 22 * s)
         }
-    }
-
-    static func batteryColor(_ battery: PowerSnapshot) -> Color {
-        if battery.isLowPowerMode { return NotchColor.yellow }
-        if battery.isCharging || battery.isOnAC { return NotchColor.green }
-        return battery.level <= 20 ? NotchColor.red : .white
+        .buttonStyle(PressableButtonStyle())
+        .accessibilityLabel(Text("Settings"))
+        .help("Settings")
     }
 }
 
