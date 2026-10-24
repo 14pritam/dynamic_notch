@@ -48,6 +48,11 @@ public final class IslandWindowController {
 
     private func chooseScreen() -> NSScreen? {
         switch model.settings.display {
+        case .followPointer:
+            let pointer = NSEvent.mouseLocation
+            return NSScreen.screens.first { NSMouseInRect(pointer, $0.frame, false) }
+                ?? NSScreen.screens.first { $0.safeAreaInsets.top > 0 }
+                ?? NSScreen.screens.first
         case .automatic:
             return NSScreen.screens.first { $0.safeAreaInsets.top > 0 } ?? NSScreen.screens.first
         case .main:
@@ -179,7 +184,19 @@ public final class IslandWindowController {
         return CGPoint(x: location.x - panel.frame.minX, y: panel.frame.maxY - location.y)
     }
 
+    /// With "follow the pointer", hop to the display the pointer moved to, but never while
+    /// something is open or being dragged, so nothing jumps away from under the user.
+    private func followPointerIfNeeded() {
+        guard model.settings.display == .followPointer, !isFileDragging,
+              !model.presentation.isExpandedFamily, let current = screen else { return }
+        let pointer = NSEvent.mouseLocation
+        guard !NSMouseInRect(pointer, current.frame, false),
+              NSScreen.screens.contains(where: { NSMouseInRect(pointer, $0.frame, false) }) else { return }
+        updateScreen()
+    }
+
     private func pointerChanged() {
+        followPointerIfNeeded()
         // Most pointer movement happens far from the notch. Skip the layout work there unless
         // something still needs to be switched off.
         let location = NSEvent.mouseLocation

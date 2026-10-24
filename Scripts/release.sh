@@ -57,5 +57,9 @@ echo "› Releasing Dynamic Notch $VERSION"
 
 git tag -a "$TAG" -m "Dynamic Notch $VERSION"
 git push origin main "$TAG"
-gh release create "$TAG" build/DynamicNotch.dmg --title "Dynamic Notch $VERSION" --notes-file "$NOTES"
+# The in-app updater checks the disk image against this before installing it.
+SHA="$(shasum -a 256 build/DynamicNotch.dmg | awk '{print $1}')"
+echo "$SHA" > build/DynamicNotch.dmg.sha256
+gh release create "$TAG" build/DynamicNotch.dmg build/DynamicNotch.dmg.sha256 --title "Dynamic Notch $VERSION" --notes-file "$NOTES"
 echo "✓ Released $TAG"
+./Scripts/update-cask.sh "$VERSION" "$SHA" || echo "! Couldn't update the Homebrew cask; run Scripts/update-cask.sh $VERSION $SHA"

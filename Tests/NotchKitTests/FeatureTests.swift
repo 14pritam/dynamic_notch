@@ -252,7 +252,7 @@ struct NewFeatureModelTests {
 
     @Test func tabsFollowSettings() {
         let model = makeModel()
-        #expect(model.homeTabs == [.home, .tray, .clipboard, .notes, .mirror])
+        #expect(model.homeTabs == [.home, .tray, .clipboard])
         model.settings.mirrorEnabled = false
         model.settings.clipboardEnabled = false
         model.settings.notesEnabled = false

@@ -2,6 +2,8 @@ import Foundation
 import Observation
 
 public enum DisplayChoice: String, CaseIterable, Sendable, Identifiable {
+    /// Whichever display the pointer is on: the notch on the built-in screen, an island elsewhere.
+    case followPointer
     /// The built-in display if it has a notch, otherwise the main display.
     case automatic
     /// The display that holds the menu bar.
@@ -53,6 +55,11 @@ public final class SettingsStore {
     public var notesEnabled: Bool { didSet { defaults.set(notesEnabled, forKey: Key.notes) } }
     /// Show a heads-up when a download finishes. Off until asked for: macOS asks for Downloads access.
     public var downloadsEnabled: Bool { didSet { defaults.set(downloadsEnabled, forKey: Key.downloads) } }
+    public var remindersEnabled: Bool { didSet { defaults.set(remindersEnabled, forKey: Key.reminders) } }
+    /// ⌃⌥ shortcuts for the launcher's tiles.
+    public var keyboardShortcutsEnabled: Bool { didSet { defaults.set(keyboardShortcutsEnabled, forKey: Key.keyboardShortcuts) } }
+    /// Look for a new version on GitHub once a day.
+    public var checksForUpdates: Bool { didSet { defaults.set(checksForUpdates, forKey: Key.checksForUpdates) } }
     /// Focus session length and the break after it, in minutes.
     public var focusMinutes: Int { didSet { defaults.set(focusMinutes, forKey: Key.focusMinutes) } }
     public var breakMinutes: Int { didSet { defaults.set(breakMinutes, forKey: Key.breakMinutes) } }
@@ -92,7 +99,7 @@ public final class SettingsStore {
         hapticsEnabled = defaults.object(forKey: Key.haptics) as? Bool ?? true
         liquidAnimations = defaults.object(forKey: Key.liquid) as? Bool ?? true
         showMenuBarIcon = defaults.object(forKey: Key.menuBarIcon) as? Bool ?? true
-        display = (defaults.string(forKey: Key.display)).flatMap(DisplayChoice.init(rawValue:)) ?? .automatic
+        display = (defaults.string(forKey: Key.display)).flatMap(DisplayChoice.init(rawValue:)) ?? .followPointer
         timerSound = defaults.object(forKey: Key.timerSound) as? Bool ?? true
         nowPlayingEnabled = defaults.object(forKey: Key.nowPlaying) as? Bool ?? true
         timerEnabled = defaults.object(forKey: Key.timer) as? Bool ?? true
@@ -107,6 +114,9 @@ public final class SettingsStore {
         clipboardEnabled = defaults.object(forKey: Key.clipboard) as? Bool ?? true
         notesEnabled = defaults.object(forKey: Key.notes) as? Bool ?? true
         downloadsEnabled = defaults.object(forKey: Key.downloads) as? Bool ?? false
+        remindersEnabled = defaults.object(forKey: Key.reminders) as? Bool ?? true
+        keyboardShortcutsEnabled = defaults.object(forKey: Key.keyboardShortcuts) as? Bool ?? true
+        checksForUpdates = defaults.object(forKey: Key.checksForUpdates) as? Bool ?? true
         let focus = defaults.object(forKey: Key.focusMinutes) as? Int ?? 25
         focusMinutes = Self.focusChoices.contains(focus) ? focus : 25
         let rest = defaults.object(forKey: Key.breakMinutes) as? Int ?? 5
@@ -165,6 +175,9 @@ public final class SettingsStore {
         static let clipboard = "home.clipboard"
         static let notes = "home.notes"
         static let downloads = "alert.downloads"
+        static let reminders = "home.reminders"
+        static let keyboardShortcuts = "general.keyboardShortcuts"
+        static let checksForUpdates = "general.checksForUpdates"
         static let focusMinutes = "timer.focusMinutes"
         static let breakMinutes = "timer.breakMinutes"
         static let calendar = "home.calendar"

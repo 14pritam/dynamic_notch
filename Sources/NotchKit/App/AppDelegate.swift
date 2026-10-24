@@ -29,6 +29,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         let model = IslandModel(settings: settings)
         let settingsController = SettingsWindowController(model: model)
         model.onOpenSettings = { [weak settingsController] in settingsController?.show() }
+        model.onOpenAbout = { [weak settingsController] in settingsController?.show(.about) }
 
         self.settings = settings
         self.model = model

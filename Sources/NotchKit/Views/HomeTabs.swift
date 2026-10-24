@@ -27,17 +27,14 @@ struct NookContainer<Content: View>: View {
                     if tab.isPanel {
                         PanelTitle(model: model, title: Self.panelTitle(tab))
                     } else {
-                        NookTabs(model: model, tabs: tabs.filter { !$0.sitsRight }, selected: tab)
+                        NookTabs(model: model, tabs: tabs, selected: tab)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 Color.clear
                     .frame(width: stripHeight > 0 ? cameraGap + 12 * s : 8 * s)
                 HStack(spacing: 4 * s) {
-                    if !tab.isPanel {
-                        NookTabs(model: model, tabs: tabs.filter(\.sitsRight), selected: tab)
-                    }
-                    KeepAwakeButton(model: model)
+                    LauncherButton(model: model, isOpen: tab == .launcher)
                     SettingsButton(model: model)
                 }
                 .frame(maxWidth: .infinity, alignment: .trailing)
@@ -52,7 +49,13 @@ struct NookContainer<Content: View>: View {
     }
 
     private static func panelTitle(_ tab: HomeTab) -> LocalizedStringKey {
-        tab == .calendar ? "Calendar" : "Timer"
+        switch tab {
+        case .calendar: "Calendar"
+        case .reminders: "Reminders"
+        case .notes: "Scratchpad"
+        case .mirror: "Camera Mirror"
+        default: "Timer"
+        }
     }
 }
 
@@ -94,42 +97,26 @@ struct BackToHomeButton: View {
     }
 }
 
-/// Keeps the Mac awake. Click to switch on until turned off; right-click for an hour or two.
-private struct KeepAwakeButton: View {
+/// The grid of everything the notch can do, next to Settings.
+private struct LauncherButton: View {
     let model: IslandModel
+    let isOpen: Bool
     @Environment(\.notchScale) private var s
 
     var body: some View {
-        let awake = model.keepAwake
         Button {
-            awake.toggle()
-            Haptics.perform(enabled: model.settings.hapticsEnabled)
+            if isOpen { model.showTab(.home) } else { model.showTab(.launcher) }
         } label: {
-            Image(systemName: awake.isOn ? "cup.and.heat.waves.fill" : "cup.and.saucer.fill")
+            Image(systemName: "square.grid.2x2")
                 .font(.system(size: 12 * s, weight: .semibold))
-                .foregroundStyle(awake.isOn ? NotchColor.yellow : NotchColor.secondaryText)
+                .foregroundStyle(isOpen ? .white : NotchColor.secondaryText)
                 .frame(width: 26 * s, height: 22 * s)
-                .background(Capsule().fill(awake.isOn ? NotchColor.yellow.opacity(0.18) : .clear))
-                .contentTransition(.symbolEffect(.replace))
+                .background(Capsule().fill(isOpen ? NotchColor.buttonFill : .clear))
         }
         .buttonStyle(PressableButtonStyle())
-        .contextMenu {
-            Button("Keep Awake for 1 Hour") { awake.turnOn(for: 3600) }
-            Button("Keep Awake for 2 Hours") { awake.turnOn(for: 7200) }
-            Button("Keep Awake Until Turned Off") { awake.turnOn() }
-            if awake.isOn {
-                Divider()
-                Button("Turn Off") { awake.turnOff() }
-            }
-        }
-        .help(awake.isOn ? Self.onHelp(awake.until) : "Keep your Mac awake (right-click for a time limit)")
-        .accessibilityLabel(Text("Keep Awake"))
-        .accessibilityValue(Text(awake.isOn ? "On" : "Off"))
-    }
-
-    private static func onHelp(_ until: Date?) -> String {
-        guard let until else { return String(localized: "Keeping your Mac awake until you turn this off") }
-        return String(localized: "Keeping your Mac awake until \(until.formatted(date: .omitted, time: .shortened))")
+        .help("Everything")
+        .accessibilityLabel(Text("All features"))
+        .accessibilityAddTraits(isOpen ? .isSelected : [])
     }
 }
 
@@ -205,6 +192,8 @@ private struct NookTabButton: View {
         case .mirror: "Mirror"
         case .timers: "Timer"
         case .calendar: "Calendar"
+        case .reminders: "Reminders"
+        case .launcher: "All Features"
         }
     }
 
@@ -217,6 +206,8 @@ private struct NookTabButton: View {
         case .mirror: "person.crop.square.fill"
         case .timers: "timer"
         case .calendar: "calendar"
+        case .reminders: "checklist"
+        case .launcher: "square.grid.2x2"
         }
     }
 }

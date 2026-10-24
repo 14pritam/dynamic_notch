@@ -138,6 +138,11 @@ some events need real hardware. These paths are covered by unit tests at the mod
 - [ ] Copy a password from a password manager: it must not show up in Clipboard.
 - [ ] Open Notes, type, press Escape: the app you were in still gets your typing afterwards.
 - [ ] Quit and reopen: the note is still there.
+- [ ] Grid button: every tile opens its view; each ⌃⌥ shortcut works from another app.
+- [ ] Reminders: Connect, tick one off, it's done in the Reminders app.
+- [ ] With an external display: move the pointer there, the island follows; back to the MacBook, the notch.
+- [ ] Updates: with an older build installed, Settings › About › Check Now offers the new version and Install and Relaunch works.
+- [ ] Homebrew: `brew install --cask shandilyaswagat/tap/dynamic-notch` installs and opens without the Open Anyway step.
 - [ ] Timer panel: drag the ruler both ways; it follows the pointer and settles on a minute.
 - [ ] Two-finger swipe on music skips; pull down opens; push up closes.
 - [ ] Mute the mic during a real call; the other side can't hear you; unmute works.

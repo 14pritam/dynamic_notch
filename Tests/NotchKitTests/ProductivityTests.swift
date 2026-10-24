@@ -200,9 +200,9 @@ struct ProductivityModelTests {
         model.cancelTimer()
     }
 
-    @Test func tabsSplitAroundTheCamera() {
-        #expect(HomeTab.allCases.filter { !$0.sitsRight && !$0.isPanel } == [.home, .tray, .clipboard])
-        #expect(HomeTab.allCases.filter(\.sitsRight) == [.notes, .mirror])
+    @Test func onlyThreeTabsSitInTheBar() {
+        #expect(HomeTab.allCases.filter(\.isTab) == [.home, .tray, .clipboard])
+        #expect(HomeTab.allCases.filter(\.isPanel) == [.notes, .mirror, .timers, .calendar, .reminders])
     }
 
     @Test func nookTabsShareOneSize() {

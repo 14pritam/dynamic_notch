@@ -40,14 +40,29 @@ And when you click it, you get a little home base right under the notch:
 
 Drag files onto the notch and you can also AirDrop them straight from there.
 
-A few more handy bits: a mute button for your mic during calls, a cup button that keeps your Mac
-awake, and (if you switch it on in Settings) a heads-up when a download finishes.
+Everything else lives behind the grid button at the top right: the timer, stopwatch, calendar,
+today's reminders, a scratchpad, your camera mirror and Keep Awake (stops your Mac from
+sleeping). Each one has a shortcut too, like ⌃⌥R for the timer.
+
+A few more handy bits: a mute button for your mic during calls, and (if you switch it on in
+Settings) a heads-up when a download finishes.
+
+Got a second screen? It follows you there as a floating island.
 
 You can make it small, medium or large, whatever looks right on your screen.
 
-It doesn't need an account, doesn't go online and doesn't track anything. All of this is free.
+It doesn't need an account and doesn't track anything. The only time it goes online is a quick
+daily check for a new version, which you can turn off in Settings. All of this is free.
 
 ## Installing it
+
+**The easy way, if you use [Homebrew](https://brew.sh):**
+
+```bash
+brew install --cask shandilyaswagat/tap/dynamic-notch
+```
+
+That's it, no extra steps. Otherwise, download it yourself:
 
 Heads up: I haven't paid Apple for a developer account yet, so the first time you open the app
 your Mac will grumble about it. You only have to deal with this once and it takes about a minute.
@@ -100,7 +115,7 @@ macOS to see what's playing. If Apple ever removes that in an update, music will
 but everything else will keep working.
 
 **Is it safe?** All the code is right here in this repo, so anyone can look through it. The app
-never goes online and doesn't collect anything. That warning during install only shows up because
+doesn't collect anything, and the only time it goes online is to check GitHub for a new version. That warning during install only shows up because
 I haven't registered the app with Apple yet. I'm planning to do that later.
 
 **Why is it asking for my camera or calendar?** Only if you use those bits. It asks for the camera
@@ -111,8 +126,10 @@ recorded or sent anywhere. Say no and everything else keeps working.
 It's never written to disk, and anything a password manager marks as private is skipped. Don't
 want it at all? Turn off Clipboard in Settings and it stops watching right away.
 
-**How do I update it?** Download the new version and drag it into Applications again. Replace the
-old one when it asks. Your settings stay put.
+**How do I update it?** It updates itself. When a new version is out, the notch lets you know;
+click it, or go to Settings › About, and hit **Install and Relaunch**. With Homebrew,
+`brew upgrade` works too. Prefer doing it by hand? Download the new version and drag it into
+Applications again. Replace the old one when it asks. Your settings stay put.
 
 **How do I get rid of it?** Click the capsule icon in the menu bar and pick **Quit Dynamic Notch**,
 then drag the app from Applications to the Trash. If you want to clear out everything it saved too,

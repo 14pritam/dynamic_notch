@@ -27,12 +27,20 @@ last one.
 - **Gestures.** Swipe sideways on the music to skip songs, pull down on the notch to open it and
   push up to close it.
 - A back button on every open activity takes you to Home.
+- **Everything in one grid.** The new grid button at the top right shows every feature as a tile,
+  each with a keyboard shortcut (⌃⌥ + a letter, like ⌃⌥R for the timer).
+- **Reminders.** Today's to-dos from the Reminders app. Click the circle to tick one off.
+- **Second screens.** The notch follows your pointer to other displays, where it shows as a
+  floating island.
+- **Updates inside the app.** Once a day it checks GitHub for a new version and can install it
+  for you. You can turn this off in Settings › About.
+- **Homebrew.** Install with `brew install --cask shandilyaswagat/tap/dynamic-notch`.
 
 ### Changed
 - The first-launch hello now greets you by your first name, with a waving hand, instead of
   "Dynamic Notch · Ready".
-- The tabs now sit on both sides of the camera (Notes and Mirror next to Settings), so none of
-  them can end up hidden behind it.
+- Only Home, Tray and Clipboard sit in the tab bar now. Notes (now called Scratchpad), Mirror
+  and Keep Awake moved into the grid, so the top right has just the grid and Settings.
 - The battery is gone from the top of Home, since it's already in your menu bar.
 - The quick timers in Home are now 5, 10 and 15 minutes, plus Focus and ••• for anything else.
 - A running timer looks like the iPhone's: pause and cancel on the left, the time on the right.

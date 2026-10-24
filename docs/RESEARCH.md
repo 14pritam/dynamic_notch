@@ -167,3 +167,15 @@ anywhere; keeping the Mac awake; a heads-up for newly arrived files in Downloads
 **Left out:** lyrics and AI-agent tracking (need the internet); other apps' notifications
 (unreliable); connected accessory battery (needs Bluetooth access; maybe later); everything that
 isn't a notch feature (window snapping, fan control, cleaners, uninstallers).
+
+## 8. Boring Notch (researched for 1.2.0)
+
+Free and open source: music with a visualizer, calendar, file shelf with AirDrop, mirror,
+charging, reminders, custom gestures and a replacement volume/brightness/backlight HUD; weather,
+Bluetooth live activity, lock-screen widgets and an extension system are planned. It installs
+with Homebrew.
+
+**Taken:** Reminders, Homebrew install, in-app updates, an island on other displays, and (from
+Vorssaint) a launcher grid of every feature with keyboard shortcuts.
+**Not yet:** replacing the macOS volume/brightness HUD and keyboard backlight; a real audio
+visualizer (needs recording permission); custom gestures.

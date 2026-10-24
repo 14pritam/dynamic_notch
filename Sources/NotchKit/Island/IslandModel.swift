@@ -22,6 +22,9 @@ public final class IslandModel {
     public let keepAwake = KeepAwakeService()
     public let microphone = MicrophoneMute()
     public let downloads: DownloadsWatcher
+    public let reminders = RemindersService()
+    public let hotKeys = HotKeys()
+    public let updater = Updater()
     let camera = CameraAccess()
 
     /// What the Timer panel starts, and the minutes picked on its ruler.
@@ -51,6 +54,8 @@ public final class IslandModel {
 
     /// Asks the app to open the settings window.
     @ObservationIgnored public var onOpenSettings: (() -> Void)?
+    /// Asks the app to open Settings at About, where updates are installed.
+    @ObservationIgnored public var onOpenAbout: (() -> Void)?
 
     @ObservationIgnored private let alarm = AlarmSound()
     @ObservationIgnored private var alertTask: Task<Void, Never>?
@@ -110,6 +115,8 @@ public final class IslandModel {
 
         timer.onFinish = { [weak self] in self?.timerDidFinish() }
         downloads.onFinished = { [weak self] url in self?.receive(.download(url)) }
+        hotKeys.onPress = { [weak self] item in self?.open(item) }
+        updater.onAvailable = { [weak self] release in self?.receive(.updateAvailable(version: release.version.description)) }
         power.onAlert = { [weak self] alert in self?.receive(alert) }
         audioRoute.onAlert = { [weak self] alert in self?.receive(alert) }
         nowPlaying.lingerDuration = settings.pausedMediaLinger
@@ -127,6 +134,9 @@ public final class IslandModel {
         if settings.clipboardEnabled { clipboard.start() }
         if settings.downloadsEnabled { downloads.start() }
         microphone.start()
+        if settings.remindersEnabled { reminders.start() }
+        if settings.keyboardShortcutsEnabled { hotKeys.register() }
+        if settings.checksForUpdates { updater.startAutomaticChecks() }
         if !settings.hasShownWelcome {
             settings.hasShownWelcome = true
             Task { [weak self] in
@@ -146,6 +156,9 @@ public final class IslandModel {
         clipboard.stop()
         downloads.stop()
         microphone.stop()
+        reminders.stop()
+        hotKeys.unregister()
+        updater.stopAutomaticChecks()
         keepAwake.turnOff()
         notes.save()
         alarm.stop()
@@ -154,7 +167,10 @@ public final class IslandModel {
     // MARK: Derived state
 
     public var engine: LayoutEngine {
-        LayoutEngine(screen: screen, appearance: settings.appearance)
+        var appearance = settings.appearance
+        // A display without a notch gets the floating island, not a pretend notch.
+        if screen.notch == nil { appearance.style = .island }
+        return LayoutEngine(screen: screen, appearance: appearance)
     }
 
     public var activeActivities: Set<ActivityKind> {
@@ -218,9 +234,66 @@ public final class IslandModel {
         var tabs: [HomeTab] = [.home]
         if settings.trayEnabled { tabs.append(.tray) }
         if settings.clipboardEnabled { tabs.append(.clipboard) }
-        if settings.notesEnabled { tabs.append(.notes) }
-        if settings.mirrorEnabled { tabs.append(.mirror) }
         return tabs
+    }
+
+    /// Tiles in the launcher grid: everything that's switched on.
+    public var launcherItems: [LauncherItem] {
+        LauncherItem.allCases.filter { item in
+            switch item {
+            case .nowPlaying: settings.nowPlayingEnabled
+            case .timer, .stopwatch: settings.timerEnabled
+            case .calendar: settings.calendarEnabled
+            case .reminders: settings.remindersEnabled
+            case .clipboard: settings.clipboardEnabled
+            case .files: settings.trayEnabled
+            case .scratchpad: settings.notesEnabled
+            case .mirror: settings.mirrorEnabled
+            case .keepAwake: true
+            }
+        }
+    }
+
+    /// Whether a tile's thing is on right now (music playing, a timer running, kept awake).
+    public func isLive(_ item: LauncherItem) -> Bool {
+        switch item {
+        case .nowPlaying: nowPlaying.info?.isPlaying == true
+        case .timer: timer.isActive
+        case .stopwatch: stopwatch.isActive
+        case .keepAwake: keepAwake.isOn
+        default: false
+        }
+    }
+
+    /// A tile was clicked or its shortcut pressed.
+    public func open(_ item: LauncherItem) {
+        switch item {
+        case .nowPlaying:
+            if activeActivities.contains(.nowPlaying) { expand(.activity(.nowPlaying)) } else { showTab(.home) }
+        case .timer:
+            if timer.isActive {
+                expand(.activity(.timer))
+            } else {
+                timerPanelMode = .timer
+                showTab(.timers)
+            }
+        case .stopwatch:
+            if stopwatch.isActive {
+                expand(.activity(.stopwatch))
+            } else {
+                timerPanelMode = .stopwatch
+                showTab(.timers)
+            }
+        case .calendar: showTab(.calendar)
+        case .reminders: showTab(.reminders)
+        case .clipboard: showTab(.clipboard)
+        case .files: showTab(.tray)
+        case .scratchpad: showTab(.notes)
+        case .mirror: showTab(.mirror)
+        case .keepAwake:
+            keepAwake.toggle()
+            Haptics.perform(enabled: settings.hapticsEnabled)
+        }
     }
 
     public var layout: IslandLayout {
@@ -291,6 +364,9 @@ public final class IslandModel {
         case .alert(.download(let url)):
             NSWorkspace.shared.activateFileViewerSelecting([url])
             dismissAlert()
+        case .alert(.updateAvailable):
+            dismissAlert()
+            onOpenAbout?()
         case .alert(let alert) where alert != .timerFinished:
             dismissAlert()
         default:
@@ -392,6 +468,7 @@ public final class IslandModel {
         case .level: settings.levelsEnabled
         case .upcomingEvent: settings.calendarEnabled
         case .download: settings.downloadsEnabled
+        case .updateAvailable: true
         case .timerFinished, .welcome, .shortcut: true
         }
     }
@@ -638,6 +715,9 @@ public final class IslandModel {
             _ = settings.clipboardEnabled
             _ = settings.notesEnabled
             _ = settings.downloadsEnabled
+            _ = settings.remindersEnabled
+            _ = settings.keyboardShortcutsEnabled
+            _ = settings.checksForUpdates
         } onChange: { [weak self] in
             Task { @MainActor [weak self] in
                 guard let self else { return }
@@ -650,6 +730,9 @@ public final class IslandModel {
                 if case .mirror = self.expandTarget, !self.settings.mirrorEnabled { self.collapse() }
                 if case .clipboard = self.expandTarget, !self.settings.clipboardEnabled { self.collapse() }
                 if case .notes = self.expandTarget, !self.settings.notesEnabled { self.collapse() }
+                if self.settings.remindersEnabled { self.reminders.start() } else { self.reminders.stop() }
+                if self.settings.keyboardShortcutsEnabled { self.hotKeys.register() } else { self.hotKeys.unregister() }
+                if self.settings.checksForUpdates { self.updater.startAutomaticChecks() } else { self.updater.stopAutomaticChecks() }
                 if self.settings.downloadsEnabled {
                     self.downloads.start()
                 } else {

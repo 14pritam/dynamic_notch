@@ -158,6 +158,8 @@ struct NotchContent: View {
                 case .mirror: MirrorBody(model: model)
                 case .timers: TimerPanelBody(model: model)
                 case .calendar: CalendarPanelBody(model: model)
+                case .reminders: RemindersPanelBody(model: model)
+                case .launcher: LauncherBody(model: model)
                 }
             }
         case .alert(let alert):
@@ -196,6 +198,7 @@ struct IslandContextMenu: View {
             Divider()
         }
         Button("Open Home") { model.showTab(.home) }
+        Button("All Features") { model.showTab(.launcher) }
         Button(model.keepAwake.isOn ? "Stop Keeping Awake" : "Keep Mac Awake") { model.keepAwake.toggle() }
         Button("Settings…") { model.onOpenSettings?() }
         Button("Quit Dynamic Notch") { NSApp.terminate(nil) }

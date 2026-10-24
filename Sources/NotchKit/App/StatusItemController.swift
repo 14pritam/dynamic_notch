@@ -86,6 +86,10 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         awake.state = model.keepAwake.isOn ? .on : .off
         menu.addItem(awake)
         menu.addItem(action("Open Notch") { [weak self] in self?.model.expand(.home) })
+        if let release = model.updater.availableRelease {
+            menu.addItem(.separator())
+            menu.addItem(action("Install Update \(release.version.description)…") { [weak self] in self?.model.updater.install(release) })
+        }
 
         menu.addItem(.separator())
         let settings = action("Settings…") { [weak self] in self?.openSettings() }

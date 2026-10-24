@@ -55,7 +55,7 @@ public final class SettingsWindowController: NSObject, NSWindowDelegate {
         tabs.addTabViewItem(item("Appearance", symbol: "capsule", size: CGSize(width: 520, height: 610), AppearanceSettingsView(settings: settings, model: model)))
         tabs.addTabViewItem(item("Activities", symbol: "square.stack.3d.up", size: CGSize(width: 520, height: 580), ActivitiesSettingsView(settings: settings, nowPlaying: model.nowPlaying)))
         tabs.addTabViewItem(item("Home", symbol: "house", size: CGSize(width: 520, height: 600), HomeSettingsView(settings: settings, calendar: model.calendar, shortcuts: model.shortcuts)))
-        tabs.addTabViewItem(item("About", symbol: "info.circle", size: CGSize(width: 520, height: 300), AboutSettingsView()))
+        tabs.addTabViewItem(item("About", symbol: "info.circle", size: CGSize(width: 520, height: 380), AboutSettingsView(settings: model.settings, updater: model.updater)))
 
         let window = NSWindow(contentViewController: tabs)
         window.styleMask = [.titled, .closable]

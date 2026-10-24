@@ -60,7 +60,9 @@ git switch develop && git merge main && git push
 The script stops if you're not on main, local main doesn't match GitHub, the working tree isn't
 committed, the tag already exists, or the changelog has no section for the version. Then it runs all checks, builds `build/DynamicNotch.dmg`, tags
 `vX.Y.Z`, pushes, and publishes the GitHub release with the changelog section as its notes (plus
-short install steps for new users).
+short install steps for new users). It also uploads `DynamicNotch.dmg.sha256`, which the in-app
+updater checks before installing, and points the Homebrew cask in `shandilyaswagat/homebrew-tap`
+at the new version (`Scripts/update-cask.sh`, from `packaging/homebrew/`).
 
 ### Why downloaded copies still get Now Playing
 

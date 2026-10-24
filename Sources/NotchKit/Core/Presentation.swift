@@ -34,6 +34,8 @@ public enum IslandAlert: Equatable, Sendable {
     case shortcut(name: String, succeeded: Bool)
     /// A file finished downloading into Downloads.
     case download(URL)
+    /// A new version of the app is out.
+    case updateAvailable(version: String)
 
     public enum LevelKind: String, Sendable, Hashable {
         case volume
@@ -50,6 +52,7 @@ public enum IslandAlert: Equatable, Sendable {
         case calendar
         case shortcut
         case download
+        case update
     }
 
     public var kind: Kind {
@@ -62,6 +65,7 @@ public enum IslandAlert: Equatable, Sendable {
         case .upcomingEvent: .calendar
         case .shortcut: .shortcut
         case .download: .download
+        case .updateAvailable: .update
         }
     }
 
@@ -78,6 +82,7 @@ public enum IslandAlert: Equatable, Sendable {
         case .upcomingEvent: 8
         case .shortcut: 2.5
         case .download: 5
+        case .updateAvailable: 6
         }
     }
 
@@ -94,8 +99,8 @@ public enum IslandAlert: Equatable, Sendable {
     }
 }
 
-/// The views that share the Home nook: the tabs, plus panels opened from Home (Timer, Calendar)
-/// that show a back button instead of the tab bar.
+/// The views that share the Home nook: the tabs (Home, Tray, Clipboard), the launcher grid, and
+/// the views opened from it or from Home's widgets, which show a back button instead of the tabs.
 public enum HomeTab: String, CaseIterable, Sendable, Codable, Hashable {
     case home
     case tray
@@ -104,15 +109,18 @@ public enum HomeTab: String, CaseIterable, Sendable, Codable, Hashable {
     case mirror
     case timers
     case calendar
+    case reminders
+    /// The grid of everything the notch can do.
+    case launcher
 
-    /// Shown to the right of the camera, beside Settings; the rest sit on the left.
-    public var sitsRight: Bool {
-        self == .notes || self == .mirror
+    /// Shown in the tab bar beside the camera.
+    public var isTab: Bool {
+        self == .home || self == .tray || self == .clipboard
     }
 
-    /// Opened from a Home widget, not from the tab bar.
+    /// Shows a back button and its name in place of the tab bar.
     public var isPanel: Bool {
-        self == .timers || self == .calendar
+        !isTab && self != .launcher
     }
 }
 

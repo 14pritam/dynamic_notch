@@ -98,6 +98,19 @@ struct AlertView: View {
             }
             .help("Click to show in Finder, or drag it out")
             .accessibilityElement(children: .combine)
+        case .updateAvailable(let version):
+            AlertRow(cameraGap: cameraGap) {
+                HStack(spacing: 6 * s) {
+                    Image(systemName: "arrow.down.circle.fill")
+                        .foregroundStyle(NotchColor.blue)
+                    Text("Update")
+                }
+            } trailing: {
+                Text("Version \(version)")
+                    .foregroundStyle(NotchColor.blue)
+            }
+            .help("Click to see what's new and install it")
+            .accessibilityElement(children: .combine)
         case .shortcut(let name, let succeeded):
             AlertRow(cameraGap: cameraGap) {
                 HStack(spacing: 6 * s) {

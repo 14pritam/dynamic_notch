@@ -70,11 +70,12 @@ struct GeneralSettingsView: View {
                 }
                 Toggle("Show in menu bar", isOn: $settings.showMenuBarIcon)
                 Picker("Display", selection: $settings.display) {
-                    Text("Automatic").tag(DisplayChoice.automatic)
+                    Text("The one you're using").tag(DisplayChoice.followPointer)
+                    Text("Built-in display").tag(DisplayChoice.automatic)
                     Text("Main display").tag(DisplayChoice.main)
                 }
             } footer: {
-                Text("Automatic uses the built-in display when it has a notch. When the menu bar icon is hidden, open Dynamic Notch again from Applications to get back here.")
+                Text("\"The one you're using\" follows your pointer between screens: the notch on your MacBook, a floating island on other displays. When the menu bar icon is hidden, open Dynamic Notch again from Applications to get back here.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -85,6 +86,7 @@ struct GeneralSettingsView: View {
                 Toggle("Collapse when the pointer leaves", isOn: $settings.collapseOnPointerExit)
                 Toggle("Liquid animations", isOn: $settings.liquidAnimations)
                 Toggle("Haptic feedback", isOn: $settings.hapticsEnabled)
+                Toggle("Keyboard shortcuts (⌃⌥ + a letter)", isOn: $settings.keyboardShortcutsEnabled)
             }
 
             Section {
@@ -294,12 +296,13 @@ struct HomeSettingsView: View {
                 IconToggle(title: "File Tray", detail: "Drop files on the notch to keep them for later", symbol: "tray.full.fill", color: .cyan, isOn: $settings.trayEnabled)
                 IconToggle(title: "Clipboard", detail: "Text you copied recently. Passwords are skipped, nothing is saved", symbol: "doc.on.clipboard.fill", color: .orange, isOn: $settings.clipboardEnabled)
                 IconToggle(title: "Notes", detail: "A quick scratchpad, saved as you type", symbol: "note.text", color: .yellow, isOn: $settings.notesEnabled)
+                IconToggle(title: "Reminders", detail: "Today's to-dos, ticked off from the notch", symbol: "checklist", color: .blue, isOn: $settings.remindersEnabled)
                 IconToggle(title: "Finished downloads", detail: "A heads-up when a file lands in Downloads. macOS asks for access once", symbol: "arrow.down.circle.fill", color: .blue, isOn: $settings.downloadsEnabled)
                 IconToggle(title: "Mirror", detail: "A quick camera preview before calls", symbol: "person.crop.square.fill", color: .purple, isOn: $settings.mirrorEnabled)
             } header: {
                 Text("Tabs")
             } footer: {
-                Text("Click the notch to open Home. The others appear as tabs next to it.")
+                Text("Click the notch to open Home. Tray and Clipboard are tabs next to it; everything else is in the grid button at the top right.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -362,6 +365,9 @@ struct HomeSettingsView: View {
 // MARK: About
 
 struct AboutSettingsView: View {
+    @Bindable var settings: SettingsStore
+    let updater: Updater
+
     private var version: String {
         let info = Bundle.main.infoDictionary
         let short = info?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -383,6 +389,8 @@ struct AboutSettingsView: View {
             Text("Live activities for your Mac’s notch.")
                 .font(.callout)
                 .padding(.top, 4)
+            UpdatesBox(settings: settings, updater: updater)
+                .padding(.top, 10)
             if let copyright = Bundle.main.infoDictionary?["NSHumanReadableCopyright"] as? String {
                 Text(copyright)
                     .font(.caption)
@@ -392,5 +400,45 @@ struct AboutSettingsView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
+    }
+}
+
+/// Updates: the automatic check, a button to check now, and Install when there's something new.
+private struct UpdatesBox: View {
+    @Bindable var settings: SettingsStore
+    let updater: Updater
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Toggle("Check for updates automatically", isOn: $settings.checksForUpdates)
+            HStack(spacing: 10) {
+                switch updater.state {
+                case .available(let release):
+                    Text("Version \(release.version.description) is available.")
+                    Button("Install and Relaunch") { updater.install(release) }
+                        .buttonStyle(.borderedProminent)
+                case .installing:
+                    ProgressView().controlSize(.small)
+                    Text("Installing…")
+                case .checking:
+                    ProgressView().controlSize(.small)
+                    Text("Checking…")
+                case .upToDate:
+                    Text("You're up to date.").foregroundStyle(.secondary)
+                    Button("Check Now") { updater.check() }
+                case .failed(let message):
+                    Text(message).foregroundStyle(.secondary)
+                    Button("Try Again") { updater.check() }
+                case .idle:
+                    Button("Check for Updates") { updater.check() }
+                }
+            }
+            .font(.callout)
+            Text("Checking asks GitHub for the latest version. It's the only time Dynamic Notch goes online.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: 380)
     }
 }
