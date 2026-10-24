@@ -171,6 +171,11 @@ public enum IslandPresentation: Equatable, Sendable {
         return nil
     }
 
+    public var isHidden: Bool {
+        if case .hidden = self { return true }
+        return false
+    }
+
     public var isVisible: Bool {
         if case .hidden = self { return false }
         return true

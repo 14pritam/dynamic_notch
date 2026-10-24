@@ -566,7 +566,8 @@ public struct LayoutEngine: Equatable, Sendable {
         switch presentation {
         case .hidden:
             guard let notch = notchInWindow, style == .notch || isUnderNotch else { return [] }
-            return [CGRect(x: notch.minX, y: 0, width: notch.width, height: notch.maxY + slop)]
+            // The whole peek the notch swells into on hover, so its edges count too.
+            return [CGRect(x: notch.minX - 10 - slop, y: 0, width: notch.width + 20 + 2 * slop, height: notch.maxY + 3 + slop)]
         case .compact(_, let secondary):
             var rects = [layout.pill.insetBy(dx: -slop, dy: -slop)]
             if secondary != nil {

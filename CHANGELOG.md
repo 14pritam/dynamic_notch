@@ -22,6 +22,9 @@ last one.
   other displays. Choose Follow the pointer in Settings › General if you want that.
 
 ### Fixed
+- With Expand on hover, resting the pointer on the pill didn't open it while the pill was showing
+  on its own (Show when idle, or while trying sizes in Settings › Appearance). It now opens at
+  every size, and the whole hover puff around the notch counts, not just the camera housing.
 - After connecting Calendar, nothing showed up in the notch on a day with no more events. The
   Calendar row now always shows once connected, and the notch opens on your calendar right after
   you allow access.

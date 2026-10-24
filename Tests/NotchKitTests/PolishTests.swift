@@ -75,3 +75,37 @@ struct MediaSourceTests {
         #expect(switcher.pill.maxY <= engine.windowSize.height)
     }
 }
+
+@MainActor
+@Suite("Hover to open")
+struct HoverOpenTests {
+    private func makeModel() -> IslandModel {
+        let defaults = UserDefaults(suiteName: "NotchTests-\(UUID().uuidString)")!
+        let model = IslandModel(settings: SettingsStore(defaults: defaults), tray: TrayStore(folder: nil), notes: NotesStore(defaults: defaults))
+        model.settings.expandOnHover = true
+        return model
+    }
+
+    @Test(arguments: NotchSize.allCases)
+    func theRestingPillOpensHome(size: NotchSize) async throws {
+        let model = makeModel()
+        model.settings.appearance.size = size
+        model.isPreviewing = true
+        #expect(model.presentation == .idle)
+        let center = CGPoint(x: model.layout.pill.midX, y: model.layout.pill.midY)
+        model.pointerMoved(to: center)
+        try await Task.sleep(for: .milliseconds(1500))
+        #expect(model.presentation == .home)
+    }
+
+    @Test(arguments: NotchSize.allCases)
+    func theNotchOpensHomeFromItsEdge(size: NotchSize) async throws {
+        let model = makeModel()
+        model.settings.appearance.size = size
+        let notch = try #require(model.engine.notchInWindow)
+        // Just past the camera housing, on the peek it swells into.
+        model.pointerMoved(to: CGPoint(x: notch.maxX + 6, y: 10))
+        try await Task.sleep(for: .milliseconds(1500))
+        #expect(model.presentation == .home)
+    }
+}

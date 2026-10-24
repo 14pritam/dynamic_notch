@@ -334,7 +334,9 @@ public final class IslandModel {
 
         if settings.expandOnHover, inside, case .compact(let primary, _) = current {
             scheduleHoverExpand(.activity(primary))
-        } else if settings.expandOnHover, inside, case .hidden = current {
+        } else if settings.expandOnHover, inside, current == .idle || current.isHidden {
+            // The tucked-away notch, or the resting pill (Show when idle, or while previewing a
+            // size in Settings), opens Home.
             scheduleHoverExpand(.home)
         } else if !inside {
             hoverExpandTask?.cancel()
@@ -434,7 +436,7 @@ public final class IslandModel {
             switch (target, self.presentation) {
             case (.activity(let kind), .compact(let primary, _)) where self.isHoveringPill && primary == kind:
                 self.expand(target)
-            case (.home, .hidden) where self.isHoveringNotch:
+            case (.home, .hidden) where self.isHoveringNotch, (.home, .idle) where self.isHoveringPill:
                 self.expand(.home)
                 self.pointerEnteredExpanded = true
             default:
