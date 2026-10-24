@@ -56,6 +56,7 @@ final class DebugHooks {
         case "timers": model.timerPanelMode = parts.dropFirst().first.flatMap(TimerPanelMode.init(rawValue:)) ?? .timer; model.showTab(.timers)
         case "calendar": model.showTab(.calendar)
         case "launcher": model.showTab(.launcher)
+        case "hoverexpand": model.settings.expandOnHover = parts.dropFirst().first != "off"
         case "reminders": model.showTab(.reminders)
         case "checkupdate": model.updater.check()
         case "stopwatch": model.stopwatch.start()
@@ -75,7 +76,8 @@ final class DebugHooks {
             let info = model.nowPlaying.info
             let line = "presentation=\(model.presentation) active=\(model.activeActivities.map(\.rawValue).sorted()) "
                 + "playing=\(String(describing: info?.isPlaying)) lingering=\(model.nowPlaying.isLingering) "
-                + "title=\(info?.title ?? "-") rate=\(info?.playbackRate ?? -1) expand=\(String(describing: model.expandTarget))\n"
+                + "title=\(info?.title ?? "-") rate=\(info?.playbackRate ?? -1) expand=\(String(describing: model.expandTarget)) "
+                + "hoverNotch=\(model.isHoveringNotch) hoverPill=\(model.isHoveringPill) notch=\(String(describing: model.engine.notchInWindow)) style=\(model.engine.style)\n"
             let url = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("DynamicNotch-debug.txt")
             if let handle = try? FileHandle(forWritingTo: url) {
                 handle.seekToEndOfFile()

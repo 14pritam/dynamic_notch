@@ -18,6 +18,28 @@ last one.
 ### Changed
 - **Notch opening controls.** Settings › General now offers Click or Hover as an explicit
   opening mode. Existing “Expand on hover” settings migrate automatically.
+=======
+### Added
+- **Several apps playing at once.** When a second app starts playing music or video while the
+  first keeps going, the music view shows a button for each so you can switch between them.
+
+### Changed
+- The Calendar panel looks like Apple's Calendar widget: the month name in red, a dot under days
+  with events, and Up Next with each event's calendar colour. Click an event to open it in
+  Calendar. It now shows the whole coming week, including all-day events.
+- The back arrow is a plain chevron that highlights under the pointer, like macOS toolbars.
+- The feature grid has more room: taller tiles, lighter type and a small coloured dot for what's
+  on right now.
+- The notch stays on your MacBook's screen again by default instead of following the pointer to
+  other displays. Choose Follow the pointer in Settings › General if you want that.
+
+### Fixed
+- With Expand on hover, resting the pointer on the pill didn't open it while the pill was showing
+  on its own (Show when idle, or while trying sizes in Settings › Appearance). It now opens at
+  every size, and the whole hover puff around the notch counts, not just the camera housing.
+- After connecting Calendar, nothing showed up in the notch on a day with no more events. The
+  Calendar row now always shows once connected, and the notch opens on your calendar right after
+  you allow access.
 
 ## [1.2.0] - 2026-10-24
 

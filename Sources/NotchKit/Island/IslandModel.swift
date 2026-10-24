@@ -116,6 +116,8 @@ public final class IslandModel {
         timer.onFinish = { [weak self] in self?.timerDidFinish() }
         downloads.onFinished = { [weak self] url in self?.receive(.download(url)) }
         hotKeys.onPress = { [weak self] item in self?.open(item) }
+        // The permission dialog closes the notch; reopen it on the calendar so the user sees it worked.
+        calendar.onGranted = { [weak self] in self?.showTab(.calendar) }
         updater.onAvailable = { [weak self] release in self?.receive(.updateAvailable(version: release.version.description)) }
         power.onAlert = { [weak self] alert in self?.receive(alert) }
         audioRoute.onAlert = { [weak self] alert in self?.receive(alert) }
@@ -210,7 +212,7 @@ public final class IslandModel {
         guard settings.calendarEnabled else { return false }
         switch calendar.access {
         case .notAsked: return true
-        case .granted: return calendar.nextEvent != nil
+        case .granted: return true
         case .denied: return false
         }
     }
@@ -225,7 +227,8 @@ public final class IslandModel {
             hasMedia: homeHasMedia,
             hasEvent: showsCalendarRow,
             hasTimer: settings.timerEnabled,
-            hasShortcuts: !favoriteShortcuts.isEmpty
+            hasShortcuts: !favoriteShortcuts.isEmpty,
+            hasMediaSwitcher: !nowPlaying.otherSources.isEmpty
         )
     }
 
@@ -332,6 +335,9 @@ public final class IslandModel {
         if settings.notchOpenMode == .hover, inside, case .compact(let primary, _) = current {
             scheduleHoverExpand(.activity(primary))
         } else if settings.notchOpenMode == .hover, inside, case .hidden = current {
+        } else if settings.expandOnHover, inside, current == .idle || current.isHidden {
+            // The tucked-away notch, or the resting pill (Show when idle, or while previewing a
+            // size in Settings), opens Home.
             scheduleHoverExpand(.home)
         } else if !inside {
             hoverExpandTask?.cancel()
@@ -431,7 +437,7 @@ public final class IslandModel {
             switch (target, self.presentation) {
             case (.activity(let kind), .compact(let primary, _)) where self.isHoveringPill && primary == kind:
                 self.expand(target)
-            case (.home, .hidden) where self.isHoveringNotch:
+            case (.home, .hidden) where self.isHoveringNotch, (.home, .idle) where self.isHoveringPill:
                 self.expand(.home)
                 self.pointerEnteredExpanded = true
             default:

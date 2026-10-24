@@ -21,7 +21,7 @@ struct SettingsStoreTests {
         #expect(store.notchOpenMode == .click)
         #expect(store.nowPlayingEnabled && store.timerEnabled && store.callsEnabled && store.airDropEnabled)
         #expect(store.pausedMediaLinger == 30)
-        #expect(store.display == .followPointer)
+        #expect(store.display == .automatic)
     }
 
     @Test func persistsAcrossLaunches() {
@@ -56,7 +56,7 @@ struct SettingsStoreTests {
         let store = SettingsStore(defaults: defaults)
         #expect(store.appearance.width == NotchAppearance.widthRange.upperBound)
         #expect(store.appearance.style == .notch)
-        #expect(store.display == .followPointer)
+        #expect(store.display == .automatic)
         #expect(store.pausedMediaLinger == 30)
     }
 

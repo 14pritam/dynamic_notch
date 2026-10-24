@@ -41,6 +41,14 @@ public final class IslandWindowController {
         observeLayout()
         observeKeyboard()
         panel.orderFrontRegardless()
+        #if DEBUG
+        // QA: re-read the real pointer position, as a mouse move would.
+        observers.append(DistributedNotificationCenter.default().addObserver(
+            forName: Notification.Name("DynamicNotch.debug.pointer"), object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.pointerChanged() }
+        })
+        #endif
     }
 
     public func tearDown() {

@@ -8,17 +8,19 @@ struct LauncherBody: View {
     @Environment(\.notchScale) private var s
 
     var body: some View {
-        let items = model.launcherItems
-        let columns = Array(repeating: GridItem(.flexible(), spacing: 8 * s), count: 5)
-        LazyVGrid(columns: columns, spacing: 8 * s) {
-            ForEach(items) { item in
+        let gap = IslandMetrics.Nook.launcherGap * s
+        let columns = Array(repeating: GridItem(.flexible(), spacing: gap), count: 5)
+        LazyVGrid(columns: columns, spacing: gap) {
+            ForEach(model.launcherItems) { item in
                 LauncherTile(model: model, item: item)
             }
         }
+        .padding(.top, 4 * s)
         .frame(maxHeight: .infinity, alignment: .top)
     }
 }
 
+/// One feature: its icon, its name, and its shortcut in small grey type underneath.
 private struct LauncherTile: View {
     let model: IslandModel
     let item: LauncherItem
@@ -30,44 +32,44 @@ private struct LauncherTile: View {
         Button {
             model.open(item)
         } label: {
-            VStack(spacing: 3 * s) {
+            VStack(spacing: 0) {
                 Image(systemName: Self.symbol(item, live: live))
-                    .font(.system(size: 17 * s, weight: .regular))
+                    .font(.system(size: 19 * s, weight: .regular))
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(Self.tint(item))
-                    .frame(height: 20 * s)
+                    .frame(height: 24 * s)
                 Text(Self.title(item))
-                    .font(.system(size: 11 * s, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .font(.system(size: 11.5 * s, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.92))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                    .minimumScaleFactor(0.85)
+                    .padding(.top, 7 * s)
                 if model.settings.keyboardShortcutsEnabled {
                     Text(item.shortcutLabel)
-                        .font(.system(size: 9 * s, weight: .medium))
-                        .foregroundStyle(NotchColor.secondaryText)
+                        .font(.system(size: 9.5 * s, weight: .regular))
+                        .kerning(0.5 * s)
+                        .foregroundStyle(Color.white.opacity(0.38))
+                        .padding(.top, 2 * s)
                 }
             }
+            .padding(.horizontal, 6 * s)
             .frame(maxWidth: .infinity)
-            .frame(height: 55 * s)
+            .frame(height: IslandMetrics.Nook.launcherTile * s)
             .background(
-                RoundedRectangle(cornerRadius: 13 * s, style: .continuous)
-                    .fill(Color.white.opacity(isHovering ? 0.11 : 0.06))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 13 * s, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 16 * s, style: .continuous)
+                    .fill(Color.white.opacity(isHovering ? 0.1 : 0.055))
             )
             .overlay(alignment: .topTrailing) {
                 // On right now: music playing, a timer running, kept awake.
                 if live {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 10 * s, weight: .semibold))
-                        .symbolRenderingMode(.palette)
-                        .foregroundStyle(.black, Color.white.opacity(0.7))
-                        .padding(5 * s)
+                    Circle()
+                        .fill(Self.tint(item))
+                        .frame(width: 6 * s, height: 6 * s)
+                        .padding(9 * s)
                 }
             }
-            .contentShape(RoundedRectangle(cornerRadius: 13 * s, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 16 * s, style: .continuous))
+            .animation(.easeOut(duration: 0.15), value: isHovering)
         }
         .buttonStyle(PressableButtonStyle())
         .onHover { isHovering = $0 }
