@@ -60,6 +60,15 @@ struct IslandContentLayer: View {
                     .transition(.islandContent)
             }
         }
+        .overlay(alignment: .topLeading) {
+            if case .expanded = presentation, layout.isAttachedToTop, model.settings.appearance.style == .notch {
+                ActivityHeader(model: model, presentation: presentation)
+                    .environment(\.notchScale, layout.contentScale)
+                    .padding(.leading, layout.flare + 18 * layout.contentScale)
+                    .frame(height: max(layout.content.minY - layout.pill.minY, 1))
+                    .transition(.opacity)
+            }
+        }
         .frame(width: max(layout.pill.width, 1), height: max(layout.pill.height, 1), alignment: .topLeading)
         .clipShape(pillShape)
         .overlay {
@@ -109,11 +118,7 @@ private struct ContentKey: Hashable {
         case .idle: "idle"
         case .compact(let primary, _): "compact.\(primary.rawValue)"
         case .expanded(let kind): "expanded.\(kind.rawValue)"
-        case .home: "home"
-        case .tray: "tray"
-        case .clipboard: "clipboard"
-        case .notes: "notes"
-        case .mirror: "mirror"
+        case .nook(let tab): "nook.\(tab.rawValue)"
         case .alert(let alert): "alert.\(alert.kind)"
         case .drop: "drop"
         }
@@ -139,18 +144,22 @@ struct NotchContent: View {
             NowPlayingExpandedView(model: model)
         case .expanded(.timer):
             TimerExpandedView(model: model)
+        case .expanded(.stopwatch):
+            StopwatchExpandedView(model: model)
         case .expanded(.call):
             CallExpandedView(model: model)
-        case .home:
-            NookContainer(model: model, tab: .home, cameraGap: cameraGap, stripHeight: stripHeight) { HomeBody(model: model) }
-        case .tray:
-            NookContainer(model: model, tab: .tray, cameraGap: cameraGap, stripHeight: stripHeight) { TrayBody(model: model) }
-        case .clipboard:
-            NookContainer(model: model, tab: .clipboard, cameraGap: cameraGap, stripHeight: stripHeight) { ClipboardBody(model: model) }
-        case .notes:
-            NookContainer(model: model, tab: .notes, cameraGap: cameraGap, stripHeight: stripHeight) { NotesBody(model: model) }
-        case .mirror:
-            NookContainer(model: model, tab: .mirror, cameraGap: cameraGap, stripHeight: stripHeight) { MirrorBody(model: model) }
+        case .nook(let tab):
+            NookContainer(model: model, tab: tab, cameraGap: cameraGap, stripHeight: stripHeight) {
+                switch tab {
+                case .home: HomeBody(model: model)
+                case .tray: TrayBody(model: model)
+                case .clipboard: ClipboardBody(model: model)
+                case .notes: NotesBody(model: model)
+                case .mirror: MirrorBody(model: model)
+                case .timers: TimerPanelBody(model: model)
+                case .calendar: CalendarPanelBody(model: model)
+                }
+            }
         case .alert(let alert):
             AlertView(model: model, alert: alert, cameraGap: cameraGap)
         case .drop(let targeted):
@@ -174,11 +183,48 @@ struct IslandContextMenu: View {
             Button("Next Track") { model.nowPlaying.nextTrack() }
             Divider()
         }
-        if let session = model.calls.session {
-            Button("Show \(session.appName)") { model.calls.showApp() }
+        if model.stopwatch.isActive {
+            Button(model.stopwatch.stopwatch?.isRunning == true ? "Pause Stopwatch" : "Resume Stopwatch") { model.stopwatch.togglePause() }
+            Button("Reset Stopwatch") { model.resetStopwatch() }
             Divider()
         }
+        if let session = model.calls.session {
+            Button("Show \(session.appName)") { model.calls.showApp() }
+            if model.microphone.canMute {
+                Button(model.microphone.isMuted ? "Unmute Microphone" : "Mute Microphone") { model.microphone.toggle() }
+            }
+            Divider()
+        }
+        Button("Open Home") { model.showTab(.home) }
+        Button(model.keepAwake.isOn ? "Stop Keeping Awake" : "Keep Mac Awake") { model.keepAwake.toggle() }
         Button("Settings…") { model.onOpenSettings?() }
         Button("Quit Dynamic Notch") { NSApp.terminate(nil) }
+    }
+}
+
+/// Back to Home and the activity's name, in the strip beside the camera.
+private struct ActivityHeader: View {
+    let model: IslandModel
+    let presentation: IslandPresentation
+    @Environment(\.notchScale) private var s
+
+    var body: some View {
+        HStack(spacing: 6 * s) {
+            BackToHomeButton(model: model)
+            Text(title)
+                .font(.system(size: 13 * s, weight: .semibold))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+        }
+    }
+
+    private var title: LocalizedStringKey {
+        guard case .expanded(let kind) = presentation else { return "" }
+        return switch kind {
+        case .timer: (model.timer.timer?.mode ?? .plain).title
+        case .stopwatch: "Stopwatch"
+        case .nowPlaying: "Now Playing"
+        case .call: model.calls.session?.isCall == false ? "Microphone" : "Call"
+        }
     }
 }

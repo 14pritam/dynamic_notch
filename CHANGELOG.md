@@ -15,6 +15,18 @@ last one.
 - **Focus sessions.** Tap Focus in Home for a 25 minute session. When it ends, the notch offers a
   5 minute break, then the next session. You can change both lengths in Settings.
 - Start Focus from the menu bar too.
+- **A new Timer panel.** Pick Timer, Pomodoro or Stopwatch, slide the ruler to any length and
+  press Start. Open it from the timer icon or the ••• button in Home.
+- **Stopwatch.** Counts up next to the camera, with pause and reset.
+- **Calendar panel.** Click your next event in Home to see this month and what's coming up.
+- **Mute your mic during calls.** A mute button in the call view that works for every app.
+- **Keep Awake.** The cup button in Home stops your Mac from sleeping. Right-click it for 1 or
+  2 hours.
+- **Finished downloads.** Turn it on in Settings › Home and the notch tells you when a file lands
+  in Downloads. Click to show it in Finder or drag it straight out.
+- **Gestures.** Swipe sideways on the music to skip songs, pull down on the notch to open it and
+  push up to close it.
+- A back button on every open activity takes you to Home.
 
 ### Changed
 - The first-launch hello now greets you by your first name, with a waving hand, instead of
@@ -22,8 +34,9 @@ last one.
 - The tabs now sit on both sides of the camera (Notes and Mirror next to Settings), so none of
   them can end up hidden behind it.
 - The battery is gone from the top of Home, since it's already in your menu bar.
-- The quick timers in Home are now 5, 10, 15 and 30 minutes, to make room for Focus. The 1 minute
-  timer is still in the menu bar.
+- The quick timers in Home are now 5, 10 and 15 minutes, plus Focus and ••• for anything else.
+- A running timer looks like the iPhone's: pause and cancel on the left, the time on the right.
+  Every kind of timer uses the same orange.
 
 ### Fixed
 - After a while (sooner if you connect headphones or join calls often) the app could get stuck

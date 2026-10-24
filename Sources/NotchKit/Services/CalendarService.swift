@@ -198,3 +198,37 @@ public final class CalendarService {
         }
     }
 }
+
+extension CalendarRules {
+    /// The event happening now and the next few after it, soonest first.
+    public static func upcoming(in events: [CalendarEvent], at date: Date, limit: Int) -> [CalendarEvent] {
+        Array(events.filter { $0.end > date }.sorted { $0.start < $1.start }.prefix(limit))
+    }
+
+    /// "10:30 – 11:00 AM", or "now until 11:00 AM" while it's on.
+    public static func timeRange(for event: CalendarEvent, at date: Date) -> String {
+        let end = event.end.formatted(date: .omitted, time: .shortened)
+        if event.isHappening(at: date) { return String(localized: "now until \(end)") }
+        return event.start.formatted(date: .omitted, time: .shortened) + " – " + end
+    }
+}
+
+/// The days of one month laid out in weeks, starting on the user's first weekday.
+public struct MonthLayout: Equatable {
+    /// Day numbers in grid order; nil pads the first week.
+    public var cells: [Int?]
+    public var today: Int
+    public var weekdaySymbols: [String]
+
+    public init(containing date: Date, calendar: Calendar = .current) {
+        let start = calendar.date(from: calendar.dateComponents([.year, .month], from: date)) ?? date
+        let days = calendar.range(of: .day, in: .month, for: date)?.count ?? 30
+        let weekday = calendar.component(.weekday, from: start)
+        let lead = (weekday - calendar.firstWeekday + 7) % 7
+        cells = Array(repeating: nil, count: lead) + (1...days).map { Optional($0) }
+        today = calendar.component(.day, from: date)
+        let symbols = calendar.veryShortStandaloneWeekdaySymbols
+        let first = calendar.firstWeekday - 1
+        weekdaySymbols = Array(symbols[first...] + symbols[..<first])
+    }
+}

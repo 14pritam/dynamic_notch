@@ -124,44 +124,6 @@ private struct ScrubBar: View {
     }
 }
 
-// MARK: Timer
-
-struct TimerExpandedView: View {
-    let model: IslandModel
-    @Environment(\.notchScale) private var s
-
-    var body: some View {
-        let timer = model.timer.timer
-        let isPaused = timer?.isPaused == true
-        let mode = timer?.mode ?? .plain
-        HStack(spacing: 12 * s) {
-            CircleButton(
-                symbol: isPaused ? "play.fill" : "pause.fill",
-                size: 48 * s,
-                foreground: mode.tint,
-                background: mode.tint.opacity(0.25),
-                label: isPaused ? "Resume Timer" : "Pause Timer"
-            ) { model.timer.togglePause() }
-            CircleButton(symbol: "xmark", size: 48 * s, label: "Cancel Timer") { model.cancelTimer() }
-            Spacer(minLength: 8 * s)
-            VStack(alignment: .trailing, spacing: -4 * s) {
-                Text(mode.title)
-                    .font(.system(size: 13 * s, weight: .semibold))
-                    .foregroundStyle(mode.tint)
-                if let timer {
-                    CountdownText(timer: timer)
-                        .font(.system(size: 42 * s, weight: .light))
-                        .monospacedDigit()
-                        .foregroundStyle(mode.tint)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.6)
-                }
-            }
-        }
-        .padding(.horizontal, 20 * s)
-    }
-}
-
 // MARK: Call
 
 struct CallExpandedView: View {
@@ -188,15 +150,28 @@ struct CallExpandedView: View {
                     .lineLimit(1)
                 }
                 Spacer(minLength: 8 * s)
-                HStack(spacing: 6 * s) {
-                    if session.usesCamera {
-                        Image(systemName: "video.fill").foregroundStyle(NotchColor.green)
-                    }
-                    Image(systemName: "mic.fill").foregroundStyle(NotchColor.orange)
+                if session.usesCamera {
+                    Image(systemName: "video.fill")
+                        .font(.system(size: 12 * s, weight: .semibold))
+                        .foregroundStyle(NotchColor.green)
+                        .accessibilityLabel(Text("Camera in use"))
                 }
-                .font(.system(size: 12 * s, weight: .semibold))
-                .accessibilityElement()
-                .accessibilityLabel(Text(session.usesCamera ? "Camera and microphone in use" : "Microphone in use"))
+                // Mutes the Mac's microphone, so it works whatever app the call is in.
+                if model.microphone.canMute {
+                    let muted = model.microphone.isMuted
+                    CircleButton(
+                        symbol: muted ? "mic.slash.fill" : "mic.fill",
+                        size: 44 * s,
+                        foreground: muted ? .white : NotchColor.orange,
+                        background: muted ? NotchColor.red : NotchColor.orange.opacity(0.22),
+                        label: muted ? "Unmute Microphone" : "Mute Microphone"
+                    ) { model.microphone.toggle() }
+                } else {
+                    Image(systemName: "mic.fill")
+                        .font(.system(size: 12 * s, weight: .semibold))
+                        .foregroundStyle(NotchColor.orange)
+                        .accessibilityLabel(Text("Microphone in use"))
+                }
                 CircleButton(symbol: "arrow.up.forward", size: 44 * s, foreground: .white, background: tint, label: "Show \(session.appName)") {
                     model.calls.showApp()
                     model.collapse()

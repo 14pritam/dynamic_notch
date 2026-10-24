@@ -1,8 +1,9 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-// The Home, Tray, Clipboard, Notes and Mirror tabs share one fixed-size nook (IslandMetrics.Nook): wide and short,
-// widgets side by side. In notch style the tab header sits in the strip beside the camera.
+// Home, its tabs (Tray, Clipboard, Notes, Mirror) and its panels (Timer, Calendar) share one
+// fixed-size nook (IslandMetrics.Nook): wide and short, widgets side by side. In notch style the
+// header sits in the strip beside the camera: tabs, or a back button and title for a panel.
 
 // MARK: Container
 
@@ -22,12 +23,21 @@ struct NookContainer<Content: View>: View {
             // Each side of the camera gets exactly half of what's left, so nothing can slide
             // under the camera however many tabs are on.
             HStack(spacing: 0) {
-                NookTabs(model: model, tabs: tabs.filter { !$0.sitsRight }, selected: tab)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                Group {
+                    if tab.isPanel {
+                        PanelTitle(model: model, title: Self.panelTitle(tab))
+                    } else {
+                        NookTabs(model: model, tabs: tabs.filter { !$0.sitsRight }, selected: tab)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 Color.clear
                     .frame(width: stripHeight > 0 ? cameraGap + 12 * s : 8 * s)
                 HStack(spacing: 4 * s) {
-                    NookTabs(model: model, tabs: tabs.filter(\.sitsRight), selected: tab)
+                    if !tab.isPanel {
+                        NookTabs(model: model, tabs: tabs.filter(\.sitsRight), selected: tab)
+                    }
+                    KeepAwakeButton(model: model)
                     SettingsButton(model: model)
                 }
                 .frame(maxWidth: .infinity, alignment: .trailing)
@@ -39,6 +49,87 @@ struct NookContainer<Content: View>: View {
         }
         .padding(.horizontal, 20 * s)
         .frame(maxHeight: .infinity, alignment: .top)
+    }
+
+    private static func panelTitle(_ tab: HomeTab) -> LocalizedStringKey {
+        tab == .calendar ? "Calendar" : "Timer"
+    }
+}
+
+/// Back to Home, then the panel's name.
+private struct PanelTitle: View {
+    let model: IslandModel
+    let title: LocalizedStringKey
+    @Environment(\.notchScale) private var s
+
+    var body: some View {
+        HStack(spacing: 6 * s) {
+            BackToHomeButton(model: model)
+            Text(title)
+                .font(.system(size: 13 * s, weight: .semibold))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+        }
+    }
+}
+
+/// A chevron that returns to Home, used on panels and on every activity's expanded view.
+struct BackToHomeButton: View {
+    let model: IslandModel
+    @Environment(\.notchScale) private var s
+
+    var body: some View {
+        Button {
+            model.showTab(.home)
+        } label: {
+            Image(systemName: "chevron.left")
+                .font(.system(size: 12 * s, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 26 * s, height: 26 * s)
+                .background(Circle().fill(NotchColor.buttonFill))
+        }
+        .buttonStyle(PressableButtonStyle())
+        .help("Home")
+        .accessibilityLabel(Text("Back to Home"))
+    }
+}
+
+/// Keeps the Mac awake. Click to switch on until turned off; right-click for an hour or two.
+private struct KeepAwakeButton: View {
+    let model: IslandModel
+    @Environment(\.notchScale) private var s
+
+    var body: some View {
+        let awake = model.keepAwake
+        Button {
+            awake.toggle()
+            Haptics.perform(enabled: model.settings.hapticsEnabled)
+        } label: {
+            Image(systemName: awake.isOn ? "cup.and.heat.waves.fill" : "cup.and.saucer.fill")
+                .font(.system(size: 12 * s, weight: .semibold))
+                .foregroundStyle(awake.isOn ? NotchColor.yellow : NotchColor.secondaryText)
+                .frame(width: 26 * s, height: 22 * s)
+                .background(Capsule().fill(awake.isOn ? NotchColor.yellow.opacity(0.18) : .clear))
+                .contentTransition(.symbolEffect(.replace))
+        }
+        .buttonStyle(PressableButtonStyle())
+        .contextMenu {
+            Button("Keep Awake for 1 Hour") { awake.turnOn(for: 3600) }
+            Button("Keep Awake for 2 Hours") { awake.turnOn(for: 7200) }
+            Button("Keep Awake Until Turned Off") { awake.turnOn() }
+            if awake.isOn {
+                Divider()
+                Button("Turn Off") { awake.turnOff() }
+            }
+        }
+        .help(awake.isOn ? Self.onHelp(awake.until) : "Keep your Mac awake (right-click for a time limit)")
+        .accessibilityLabel(Text("Keep Awake"))
+        .accessibilityValue(Text(awake.isOn ? "On" : "Off"))
+    }
+
+    private static func onHelp(_ until: Date?) -> String {
+        guard let until else { return String(localized: "Keeping your Mac awake until you turn this off") }
+        return String(localized: "Keeping your Mac awake until \(until.formatted(date: .omitted, time: .shortened))")
     }
 }
 
@@ -112,6 +203,8 @@ private struct NookTabButton: View {
         case .clipboard: "Clipboard"
         case .notes: "Notes"
         case .mirror: "Mirror"
+        case .timers: "Timer"
+        case .calendar: "Calendar"
         }
     }
 
@@ -122,6 +215,8 @@ private struct NookTabButton: View {
         case .clipboard: "doc.on.clipboard.fill"
         case .notes: "note.text"
         case .mirror: "person.crop.square.fill"
+        case .timers: "timer"
+        case .calendar: "calendar"
         }
     }
 }
@@ -164,7 +259,7 @@ struct HomeBody: View {
             }
             VStack(alignment: .leading, spacing: IslandMetrics.Nook.rowGap * s) {
                 if content.hasEvent {
-                    CalendarRow(calendar: model.calendar)
+                    CalendarRow(model: model, calendar: model.calendar)
                         .frame(height: IslandMetrics.Nook.row * s)
                 }
                 if content.hasTimer {
@@ -250,6 +345,7 @@ private struct MiniProgress: View {
 
 /// The next event, or a button to connect the calendar the first time.
 private struct CalendarRow: View {
+    let model: IslandModel
     let calendar: CalendarService
     @Environment(\.notchScale) private var s
 
@@ -269,7 +365,7 @@ private struct CalendarRow: View {
                     .buttonStyle(ChipButtonStyle(tint: NotchColor.red, scale: s))
                     .fixedSize()
             } else if let event = calendar.nextEvent {
-                Button { calendar.openCalendarApp() } label: {
+                Button { model.showTab(.calendar) } label: {
                     HStack(spacing: 7 * s) {
                         Circle()
                             .fill(NotchColor.accent(event.color))
@@ -303,12 +399,15 @@ private struct TimerPresetsRow: View {
 
     var body: some View {
         HStack(spacing: 6 * s) {
-            Image(systemName: "timer")
-                .font(.system(size: 12 * s, weight: .semibold))
-                .foregroundStyle(NotchColor.orange)
-                .frame(width: 16 * s)
-                .accessibilityLabel(Text("Timer"))
-            ForEach(TimerService.presets, id: \.self) { preset in
+            Button { openPanel(.timer) } label: {
+                Image(systemName: "timer")
+                    .font(.system(size: 12 * s, weight: .semibold))
+                    .foregroundStyle(NotchColor.orange)
+                    .frame(width: 16 * s, height: 30 * s)
+            }
+            .buttonStyle(PressableButtonStyle())
+            .accessibilityLabel(Text("Timer"))
+            ForEach(TimerService.presets.prefix(3), id: \.self) { preset in
                 Button(TimeFormatting.presetLabel(seconds: preset)) {
                     model.startTimer(preset)
                 }
@@ -325,7 +424,20 @@ private struct TimerPresetsRow: View {
             .frame(width: 78 * s)
             .help("Focus for \(model.settings.focusMinutes) minutes, then take a \(model.settings.breakMinutes) minute break")
             .accessibilityLabel(Text("Start a \(model.settings.focusMinutes) minute focus session"))
+            Button { openPanel(.timer) } label: {
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 12 * s, weight: .bold))
+            }
+            .buttonStyle(ChipButtonStyle(tint: .white, scale: s))
+            .frame(width: 40 * s)
+            .help("More: any length, Focus or Stopwatch")
+            .accessibilityLabel(Text("More timers"))
         }
+    }
+
+    private func openPanel(_ mode: TimerPanelMode) {
+        model.timerPanelMode = mode
+        model.showTab(.timers)
     }
 }
 

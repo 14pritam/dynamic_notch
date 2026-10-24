@@ -18,7 +18,16 @@ public final class IslandModel {
     public let levels: LevelMonitor
     public let clipboard: ClipboardMonitor
     public let notes: NotesStore
+    public let stopwatch: StopwatchService
+    public let keepAwake = KeepAwakeService()
+    public let microphone = MicrophoneMute()
+    public let downloads: DownloadsWatcher
     let camera = CameraAccess()
+
+    /// What the Timer panel starts, and the minutes picked on its ruler.
+    public var timerPanelMode: TimerPanelMode = .timer
+    public var timerPanelMinutes = 15
+    public var focusPanelMinutes: Int
 
     public var screen: ScreenMetrics = .sample
     public private(set) var alerts = AlertQueue()
@@ -64,7 +73,9 @@ public final class IslandModel {
         shortcuts: ShortcutsService = ShortcutsService(),
         levels: LevelMonitor = LevelMonitor(),
         clipboard: ClipboardMonitor = ClipboardMonitor(),
-        notes: NotesStore = NotesStore()
+        notes: NotesStore = NotesStore(),
+        stopwatch: StopwatchService = StopwatchService(),
+        downloads: DownloadsWatcher = DownloadsWatcher()
     ) {
         self.settings = settings
         self.nowPlaying = nowPlaying
@@ -78,6 +89,9 @@ public final class IslandModel {
         self.levels = levels
         self.clipboard = clipboard
         self.notes = notes
+        self.stopwatch = stopwatch
+        self.downloads = downloads
+        focusPanelMinutes = settings.focusMinutes
 
         calendar.onReminder = { [weak self] event in
             guard let self, self.settings.calendarEnabled else { return }
@@ -95,6 +109,7 @@ public final class IslandModel {
         }
 
         timer.onFinish = { [weak self] in self?.timerDidFinish() }
+        downloads.onFinished = { [weak self] url in self?.receive(.download(url)) }
         power.onAlert = { [weak self] alert in self?.receive(alert) }
         audioRoute.onAlert = { [weak self] alert in self?.receive(alert) }
         nowPlaying.lingerDuration = settings.pausedMediaLinger
@@ -110,6 +125,8 @@ public final class IslandModel {
         calendar.start()
         levels.start()
         if settings.clipboardEnabled { clipboard.start() }
+        if settings.downloadsEnabled { downloads.start() }
+        microphone.start()
         if !settings.hasShownWelcome {
             settings.hasShownWelcome = true
             Task { [weak self] in
@@ -127,6 +144,9 @@ public final class IslandModel {
         calendar.stop()
         levels.stop()
         clipboard.stop()
+        downloads.stop()
+        microphone.stop()
+        keepAwake.turnOff()
         notes.save()
         alarm.stop()
     }
@@ -141,6 +161,7 @@ public final class IslandModel {
         var active = Set<ActivityKind>()
         if settings.callsEnabled, calls.session != nil { active.insert(.call) }
         if settings.timerEnabled, timer.isActive { active.insert(.timer) }
+        if settings.timerEnabled, stopwatch.isActive { active.insert(.stopwatch) }
         if settings.nowPlayingEnabled, nowPlaying.isActivityVisible { active.insert(.nowPlaying) }
         return active
     }
@@ -267,6 +288,9 @@ public final class IslandModel {
             expand(.home)
         case .compact(let primary, _):
             expand(.activity(primary))
+        case .alert(.download(let url)):
+            NSWorkspace.shared.activateFileViewerSelecting([url])
+            dismissAlert()
         case .alert(let alert) where alert != .timerFinished:
             dismissAlert()
         default:
@@ -367,6 +391,7 @@ public final class IslandModel {
         case .headphones: settings.headphoneAlertsEnabled
         case .level: settings.levelsEnabled
         case .upcomingEvent: settings.calendarEnabled
+        case .download: settings.downloadsEnabled
         case .timerFinished, .welcome, .shortcut: true
         }
     }
@@ -411,13 +436,15 @@ public final class IslandModel {
         collapse()
     }
 
-    /// Starts a focus session, or the break after one, with the lengths from Settings.
-    public func startSession(_ mode: TimerMode) {
-        let minutes = switch mode {
-        case .focus: settings.focusMinutes
-        case .rest: settings.breakMinutes
-        case .plain: 0
-        }
+    /// Starts a focus session, or the break after one. Lengths come from Settings unless given.
+    public func startSession(_ mode: TimerMode, minutes chosen: Int? = nil) {
+        let minutes = chosen ?? {
+            switch mode {
+            case .focus: settings.focusMinutes
+            case .rest: settings.breakMinutes
+            case .plain: 0
+            }
+        }()
         guard minutes > 0 else { return }
         alarm.stop()
         alerts.removeAll(of: .timer)
@@ -429,6 +456,52 @@ public final class IslandModel {
 
     public func cancelTimer() {
         timer.cancel()
+    }
+
+    /// "Start" in the Timer panel.
+    public func startFromPanel() {
+        switch timerPanelMode {
+        case .timer: startTimer(TimeInterval(timerPanelMinutes * 60))
+        case .focus: startSession(.focus, minutes: focusPanelMinutes)
+        case .stopwatch:
+            stopwatch.reset()
+            stopwatch.start()
+            collapse()
+        }
+    }
+
+    public func resetStopwatch() {
+        stopwatch.reset()
+    }
+
+    // MARK: Gestures
+
+    /// Two fingers pulled down on the notch open it; pushed up close it.
+    public func pull(open: Bool) {
+        if open {
+            switch presentation {
+            case .hidden, .idle: expand(.home)
+            case .compact(let primary, _): expand(.activity(primary))
+            default: break
+            }
+        } else if expandTarget != nil {
+            collapse()
+        }
+    }
+
+    /// A sideways swipe skips songs when music is in front, and otherwise swaps activities.
+    public func swipe(forward: Bool) {
+        let front: ActivityKind? = switch presentation {
+        case .compact(let primary, _): primary
+        case .expanded(let kind): kind
+        default: nil
+        }
+        if front == .nowPlaying {
+            if forward { nowPlaying.nextTrack() } else { nowPlaying.previousTrack() }
+            Haptics.perform(enabled: settings.hapticsEnabled)
+        } else if case .compact = presentation {
+            cyclePrimary(forward: forward)
+        }
     }
 
     private func timerDidFinish() {
@@ -564,6 +637,7 @@ public final class IslandModel {
             _ = settings.mirrorEnabled
             _ = settings.clipboardEnabled
             _ = settings.notesEnabled
+            _ = settings.downloadsEnabled
         } onChange: { [weak self] in
             Task { @MainActor [weak self] in
                 guard let self else { return }
@@ -576,6 +650,11 @@ public final class IslandModel {
                 if case .mirror = self.expandTarget, !self.settings.mirrorEnabled { self.collapse() }
                 if case .clipboard = self.expandTarget, !self.settings.clipboardEnabled { self.collapse() }
                 if case .notes = self.expandTarget, !self.settings.notesEnabled { self.collapse() }
+                if self.settings.downloadsEnabled {
+                    self.downloads.start()
+                } else {
+                    self.downloads.stop()
+                }
                 if self.settings.clipboardEnabled {
                     self.clipboard.start()
                 } else {

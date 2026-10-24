@@ -138,6 +138,11 @@ some events need real hardware. These paths are covered by unit tests at the mod
 - [ ] Copy a password from a password manager: it must not show up in Clipboard.
 - [ ] Open Notes, type, press Escape: the app you were in still gets your typing afterwards.
 - [ ] Quit and reopen: the note is still there.
+- [ ] Timer panel: drag the ruler both ways; it follows the pointer and settles on a minute.
+- [ ] Two-finger swipe on music skips; pull down opens; push up closes.
+- [ ] Mute the mic during a real call; the other side can't hear you; unmute works.
+- [ ] Keep Awake on: the display doesn't sleep; off: it does.
+- [ ] Turn on Finished downloads, download a file: the heads-up shows, drag it out works.
 - [ ] Start Focus, let it run out (or set it short in a debug build): Break and Stop work.
 - [ ] Connect Calendar and allow access: next event shows; heads-up 5 minutes before.
 - [ ] Pin a harmless shortcut in Settings › Home and run it from Home.

@@ -209,7 +209,7 @@ public struct LayoutEngine: Equatable, Sendable {
     /// Volume and brightness use a slimmer shape than other alerts.
     private func alertBodySize(for alert: IslandAlert) -> CGSize {
         switch alert {
-        case .upcomingEvent, .shortcut:
+        case .upcomingEvent, .shortcut, .download:
             // Names need room beside the camera.
             switch style {
             case .notch:
@@ -339,9 +339,9 @@ public struct LayoutEngine: Equatable, Sendable {
     private func baseContentHeight(for presentation: IslandPresentation, home: HomeContent) -> CGFloat? {
         switch presentation {
         case .expanded(.nowPlaying): IslandMetrics.ContentHeight.nowPlaying
-        case .expanded(.timer): IslandMetrics.ContentHeight.timer
+        case .expanded(.timer), .expanded(.stopwatch): IslandMetrics.ContentHeight.timer
         case .expanded(.call): IslandMetrics.ContentHeight.call
-        case .home, .tray, .clipboard, .notes, .mirror: IslandMetrics.ContentHeight.nook
+        case .nook: IslandMetrics.ContentHeight.nook
         case .alert(.timerFinished): IslandMetrics.ContentHeight.timerFinished
         case .drop: IslandMetrics.ContentHeight.drop
         default: nil
@@ -451,7 +451,7 @@ public struct LayoutEngine: Equatable, Sendable {
             layout.shadow = 0.6
             layout.content = layout.pill.insetBy(dx: IslandMetrics.compactFlare, dy: 0)
             layout.cameraGap = cameraGap
-        case .home, .tray, .clipboard, .notes, .mirror:
+        case .nook:
             // The tab header lives in the strip beside the camera; widgets sit below it.
             let width = nookWidth
             let strip = screen.topInset

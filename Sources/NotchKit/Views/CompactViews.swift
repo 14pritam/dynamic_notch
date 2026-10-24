@@ -43,6 +43,11 @@ struct CompactView: View {
                 .font(.system(size: scale.fontSize + 1, weight: .semibold))
                 .foregroundStyle(mode.tint)
                 .accessibilityLabel(Text(mode.title))
+        case .stopwatch:
+            Image(systemName: "stopwatch.fill")
+                .font(.system(size: scale.fontSize + 1, weight: .semibold))
+                .foregroundStyle(NotchColor.orange)
+                .accessibilityLabel(Text("Stopwatch"))
         case .call:
             if let session = model.calls.session, !session.isCall {
                 AppIconView(icon: model.calls.appIcon, symbol: "mic.fill", tint: NotchColor.orange, size: scale.icon)
@@ -71,6 +76,16 @@ struct CompactView: View {
                     .font(.system(size: scale.fontSize, weight: .semibold))
                     .monospacedDigit()
                     .foregroundStyle(timer.mode.tint.opacity(timer.isPaused ? 0.6 : 1))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+            }
+        case .stopwatch:
+            let isRunning = model.stopwatch.stopwatch?.isRunning == true
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                Text(TimeFormatting.clock(model.stopwatch.elapsed(at: context.date)))
+                    .font(.system(size: scale.fontSize, weight: .semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(NotchColor.orange.opacity(isRunning ? 1 : 0.6))
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
             }
@@ -106,6 +121,10 @@ struct MinimalView: View {
                 }
             case .timer:
                 TimerRing(model: model, diameter: inner)
+            case .stopwatch:
+                Image(systemName: "stopwatch.fill")
+                    .font(.system(size: diameter * 0.4, weight: .semibold))
+                    .foregroundStyle(NotchColor.orange)
             case .call:
                 Image(systemName: model.calls.session?.usesCamera == true ? "video.fill" : "phone.fill")
                     .font(.system(size: diameter * 0.36, weight: .semibold))

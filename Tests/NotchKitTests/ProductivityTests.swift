@@ -201,7 +201,7 @@ struct ProductivityModelTests {
     }
 
     @Test func tabsSplitAroundTheCamera() {
-        #expect(HomeTab.allCases.filter { !$0.sitsRight } == [.home, .tray, .clipboard])
+        #expect(HomeTab.allCases.filter { !$0.sitsRight && !$0.isPanel } == [.home, .tray, .clipboard])
         #expect(HomeTab.allCases.filter(\.sitsRight) == [.notes, .mirror])
     }
 

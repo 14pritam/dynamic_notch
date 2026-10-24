@@ -29,7 +29,8 @@ Here's what it shows:
 
 And when you click it, you get a little home base right under the notch:
 
-- **Home** with your music, next event, quick timers, a Focus timer and your favourite Shortcuts
+- **Home** with your music, next event, quick timers, a Focus timer and your favourite Shortcuts.
+  Tap the timer for any length, Pomodoro or a stopwatch, and tap your next event to see the month
 - **Tray**, a handy spot to drop files you'll need again in a minute. Drag files onto the notch
   to put them there, and drag them back out when you're ready
 - **Clipboard**, the last few things you copied. Click one to copy it again. Passwords are
@@ -38,6 +39,9 @@ And when you click it, you get a little home base right under the notch:
 - **Mirror**, a quick look at your camera before you hop on a call
 
 Drag files onto the notch and you can also AirDrop them straight from there.
+
+A few more handy bits: a mute button for your mic during calls, a cup button that keeps your Mac
+awake, and (if you switch it on in Settings) a heads-up when a download finishes.
 
 You can make it small, medium or large, whatever looks right on your screen.
 
@@ -73,7 +77,9 @@ xattr -dr com.apple.quarantine "/Applications/Dynamic Notch.app"
 | Start a timer, a focus session or a shortcut | Click the notch, then tap it on Home |
 | See more about something | Click it |
 | Close it | Click anywhere else, or just move your mouse away (Notes stays open until you click away or press Escape) |
-| Flip between two things | Swipe left or right on it with two fingers |
+| Skip a song | Swipe left or right on the music with two fingers |
+| Open or close it without clicking | Pull down on the notch with two fingers, push up to close |
+| Get back to Home | Click the back arrow at the top left |
 | Keep files for later, or AirDrop them | Drag them onto the notch and drop on **Tray** or **AirDrop** |
 | Pause a timer, skip a song, open settings | Right-click the notch |
 | Change the size, pick your Shortcuts, turn stuff off | Click the capsule icon in the menu bar, then **Settings…** |

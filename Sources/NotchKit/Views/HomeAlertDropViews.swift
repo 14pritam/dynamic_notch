@@ -80,6 +80,24 @@ struct AlertView: View {
                     .foregroundStyle(NotchColor.red)
             }
             .accessibilityElement(children: .combine)
+        case .download(let url):
+            AlertRow(cameraGap: cameraGap) {
+                HStack(spacing: 6 * s) {
+                    Image(nsImage: NSWorkspace.shared.icon(forFile: url.path))
+                        .resizable()
+                        .frame(width: 20 * s, height: 20 * s)
+                    Text(url.lastPathComponent)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+                // Drag the file straight out of the notch.
+                .onDrag { NSItemProvider(contentsOf: url) ?? NSItemProvider() }
+            } trailing: {
+                Text("Downloaded")
+                    .foregroundStyle(NotchColor.blue)
+            }
+            .help("Click to show in Finder, or drag it out")
+            .accessibilityElement(children: .combine)
         case .shortcut(let name, let succeeded):
             AlertRow(cameraGap: cameraGap) {
                 HStack(spacing: 6 * s) {

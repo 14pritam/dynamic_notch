@@ -53,6 +53,13 @@ final class DebugHooks {
         case "tray": model.showTab(.tray)
         case "mirror": model.showTab(.mirror)
         case "clipboard": model.showTab(.clipboard)
+        case "timers": model.timerPanelMode = parts.dropFirst().first.flatMap(TimerPanelMode.init(rawValue:)) ?? .timer; model.showTab(.timers)
+        case "calendar": model.showTab(.calendar)
+        case "stopwatch": model.stopwatch.start()
+        case "awake": model.keepAwake.toggle()
+        case "download": model.receive(.download(URL(fileURLWithPath: parts.dropFirst().first ?? "/tmp/Report.pdf")))
+        case "expandnow": if case .compact(let primary, _) = model.presentation { model.expand(.activity(primary)) }
+        case "skip": model.swipe(forward: true)
         case "notes": model.showTab(.notes)
         case "focus": if let seconds = parts.dropFirst().first.flatMap(Double.init) { model.timer.start(duration: seconds, mode: .focus) } else { model.startSession(.focus) }
         case "break": model.startSession(.rest)

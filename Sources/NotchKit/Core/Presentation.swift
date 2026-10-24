@@ -4,6 +4,7 @@ import Foundation
 public enum ActivityKind: String, CaseIterable, Sendable, Codable, Hashable {
     case call
     case timer
+    case stopwatch
     case nowPlaying
 
     /// Lower comes first.
@@ -11,7 +12,8 @@ public enum ActivityKind: String, CaseIterable, Sendable, Codable, Hashable {
         switch self {
         case .call: 0
         case .timer: 1
-        case .nowPlaying: 2
+        case .stopwatch: 2
+        case .nowPlaying: 3
         }
     }
 }
@@ -30,6 +32,8 @@ public enum IslandAlert: Equatable, Sendable {
     case upcomingEvent(title: String, minutes: Int)
     /// A shortcut run from the notch finished.
     case shortcut(name: String, succeeded: Bool)
+    /// A file finished downloading into Downloads.
+    case download(URL)
 
     public enum LevelKind: String, Sendable, Hashable {
         case volume
@@ -45,6 +49,7 @@ public enum IslandAlert: Equatable, Sendable {
         case level
         case calendar
         case shortcut
+        case download
     }
 
     public var kind: Kind {
@@ -56,6 +61,7 @@ public enum IslandAlert: Equatable, Sendable {
         case .level: .level
         case .upcomingEvent: .calendar
         case .shortcut: .shortcut
+        case .download: .download
         }
     }
 
@@ -71,6 +77,7 @@ public enum IslandAlert: Equatable, Sendable {
         case .level: 1.6
         case .upcomingEvent: 8
         case .shortcut: 2.5
+        case .download: 5
         }
     }
 
@@ -87,37 +94,41 @@ public enum IslandAlert: Equatable, Sendable {
     }
 }
 
-/// The tabs of the Home view.
+/// The views that share the Home nook: the tabs, plus panels opened from Home (Timer, Calendar)
+/// that show a back button instead of the tab bar.
 public enum HomeTab: String, CaseIterable, Sendable, Codable, Hashable {
     case home
     case tray
     case clipboard
     case notes
     case mirror
+    case timers
+    case calendar
 
     /// Shown to the right of the camera, beside Settings; the rest sit on the left.
     public var sitsRight: Bool {
         self == .notes || self == .mirror
     }
+
+    /// Opened from a Home widget, not from the tab bar.
+    public var isPanel: Bool {
+        self == .timers || self == .calendar
+    }
 }
 
 public enum ExpandTarget: Equatable, Sendable {
     case activity(ActivityKind)
-    case home
-    case tray
-    case clipboard
-    case notes
-    case mirror
+    case nook(HomeTab)
 
     public init(_ tab: HomeTab) {
-        switch tab {
-        case .home: self = .home
-        case .tray: self = .tray
-        case .clipboard: self = .clipboard
-        case .notes: self = .notes
-        case .mirror: self = .mirror
-        }
+        self = .nook(tab)
     }
+
+    public static let home = ExpandTarget.nook(.home)
+    public static let tray = ExpandTarget.nook(.tray)
+    public static let clipboard = ExpandTarget.nook(.clipboard)
+    public static let notes = ExpandTarget.nook(.notes)
+    public static let mirror = ExpandTarget.nook(.mirror)
 }
 
 /// Everything the pill can look like at a given moment.
@@ -128,35 +139,28 @@ public enum IslandPresentation: Equatable, Sendable {
     case idle
     case compact(primary: ActivityKind, secondary: ActivityKind?)
     case expanded(ActivityKind)
-    case home
-    /// Files dropped on the notch, kept for later.
-    case tray
-    /// Recently copied text.
-    case clipboard
-    /// A quick scratchpad.
-    case notes
-    /// Camera preview.
-    case mirror
+    /// Home, its tabs (Tray, Clipboard, Notes, Mirror) and its panels, in one fixed-size nook.
+    case nook(HomeTab)
     case alert(IslandAlert)
     case drop(targeted: Bool)
 
+    public static let home = IslandPresentation.nook(.home)
+    public static let tray = IslandPresentation.nook(.tray)
+    public static let clipboard = IslandPresentation.nook(.clipboard)
+    public static let notes = IslandPresentation.nook(.notes)
+    public static let mirror = IslandPresentation.nook(.mirror)
+
     public var isExpandedFamily: Bool {
         switch self {
-        case .expanded, .home, .tray, .clipboard, .notes, .mirror, .alert, .drop: true
+        case .expanded, .nook, .alert, .drop: true
         case .hidden, .idle, .compact: false
         }
     }
 
     /// Which Home tab this is, if it is one.
     public var homeTab: HomeTab? {
-        switch self {
-        case .home: .home
-        case .tray: .tray
-        case .clipboard: .clipboard
-        case .notes: .notes
-        case .mirror: .mirror
-        default: nil
-        }
+        if case .nook(let tab) = self { return tab }
+        return nil
     }
 
     public var isVisible: Bool {
@@ -249,16 +253,8 @@ public enum PresentationResolver {
             return .alert(alert)
         }
         switch input.expandTarget {
-        case .home:
-            return .home
-        case .tray:
-            return .tray
-        case .clipboard:
-            return .clipboard
-        case .notes:
-            return .notes
-        case .mirror:
-            return .mirror
+        case .nook(let tab):
+            return .nook(tab)
         case .activity(let kind) where input.activeActivities.contains(kind):
             return .expanded(kind)
         default:

@@ -7,7 +7,6 @@ enum NotchColor {
     static let red = Color(red: 1, green: 69 / 255, blue: 58 / 255)
     static let yellow = Color(red: 1, green: 214 / 255, blue: 10 / 255)
     static let blue = Color(red: 10 / 255, green: 132 / 255, blue: 1)
-    static let indigo = Color(red: 125 / 255, green: 122 / 255, blue: 1)
     static let secondaryText = Color.white.opacity(0.55)
     static let buttonFill = Color.white.opacity(0.18)
 
@@ -17,13 +16,8 @@ enum NotchColor {
 }
 
 extension TimerMode {
-    var tint: Color {
-        switch self {
-        case .plain: NotchColor.orange
-        case .focus: NotchColor.indigo
-        case .rest: NotchColor.green
-        }
-    }
+    /// Every kind of timer shares the timer orange, as on iPhone.
+    var tint: Color { NotchColor.orange }
 
     var title: LocalizedStringKey {
         switch self {
@@ -53,7 +47,7 @@ enum Motion {
             return .spring(duration: 0.4, bounce: 0.1)
         case .idle, .compact:
             return .spring(duration: 0.45, bounce: 0.28)
-        case .expanded, .home, .tray, .clipboard, .notes, .mirror, .alert, .drop:
+        case .expanded, .nook, .alert, .drop:
             return .spring(duration: 0.5, bounce: 0.25)
         }
     }

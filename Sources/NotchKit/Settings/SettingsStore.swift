@@ -51,6 +51,8 @@ public final class SettingsStore {
     /// Keep a history of copied text (memory only, passwords skipped).
     public var clipboardEnabled: Bool { didSet { defaults.set(clipboardEnabled, forKey: Key.clipboard) } }
     public var notesEnabled: Bool { didSet { defaults.set(notesEnabled, forKey: Key.notes) } }
+    /// Show a heads-up when a download finishes. Off until asked for: macOS asks for Downloads access.
+    public var downloadsEnabled: Bool { didSet { defaults.set(downloadsEnabled, forKey: Key.downloads) } }
     /// Focus session length and the break after it, in minutes.
     public var focusMinutes: Int { didSet { defaults.set(focusMinutes, forKey: Key.focusMinutes) } }
     public var breakMinutes: Int { didSet { defaults.set(breakMinutes, forKey: Key.breakMinutes) } }
@@ -104,6 +106,7 @@ public final class SettingsStore {
         mirrorEnabled = defaults.object(forKey: Key.mirror) as? Bool ?? true
         clipboardEnabled = defaults.object(forKey: Key.clipboard) as? Bool ?? true
         notesEnabled = defaults.object(forKey: Key.notes) as? Bool ?? true
+        downloadsEnabled = defaults.object(forKey: Key.downloads) as? Bool ?? false
         let focus = defaults.object(forKey: Key.focusMinutes) as? Int ?? 25
         focusMinutes = Self.focusChoices.contains(focus) ? focus : 25
         let rest = defaults.object(forKey: Key.breakMinutes) as? Int ?? 5
@@ -161,6 +164,7 @@ public final class SettingsStore {
         static let mirror = "home.mirror"
         static let clipboard = "home.clipboard"
         static let notes = "home.notes"
+        static let downloads = "alert.downloads"
         static let focusMinutes = "timer.focusMinutes"
         static let breakMinutes = "timer.breakMinutes"
         static let calendar = "home.calendar"

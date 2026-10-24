@@ -154,3 +154,16 @@ A second look, past the four big paid apps, at what free and newer notch apps ad
 and each one adds clutter to a small space); weather and AI features (need the internet);
 Focus-mode and screen-recording indicators (no public API).
 
+
+## 7. Vorssaint (researched for 1.2.0)
+
+Vorssaint is a free, open-source all-in-one Mac utility whose "Dynamic Island" is one optional
+module among window, mouse, sound, cleaning and system-monitor tools.
+
+**Taken:** swipe on the music to change tracks and scroll to open or close; stopwatch and focus
+sessions next to the timer; a month calendar with upcoming events; muting the microphone from
+anywhere; keeping the Mac awake; a heads-up for newly arrived files in Downloads.
+
+**Left out:** lyrics and AI-agent tracking (need the internet); other apps' notifications
+(unreliable); connected accessory battery (needs Bluetooth access; maybe later); everything that
+isn't a notch feature (window snapping, fan control, cleaners, uninstallers).

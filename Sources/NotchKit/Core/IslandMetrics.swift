@@ -43,7 +43,7 @@ public enum IslandMetrics {
     /// notch strip (notch) around it.
     public enum ContentHeight {
         public static let nowPlaying: CGFloat = 140
-        public static let timer: CGFloat = 72
+        public static let timer: CGFloat = 76
         public static let call: CGFloat = 72
         public static let drop: CGFloat = 100
         public static let timerFinished: CGFloat = 72

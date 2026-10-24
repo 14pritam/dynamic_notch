@@ -14,7 +14,7 @@ public final class IslandWindowController {
 
     private var dragChangeCount = NSPasteboard(name: .drag).changeCount
     private var isFileDragging = false
-    private var scrollTotal: CGFloat = 0
+    private var scrollTotal: CGSize = .zero
     private var scrollHandled = false
     private var lastWheelStep = Date.distantPast
     private var workspaceObservers: [NSObjectProtocol] = []
@@ -244,32 +244,51 @@ public final class IslandWindowController {
         }
     }
 
-    /// Two-finger horizontal swipe over the pill swaps the front activity, once per gesture.
+    /// Two-finger gestures over the notch, one action per gesture:
+    /// sideways skips songs when music is in front (otherwise swaps activities), pulling down
+    /// opens the notch and pushing up closes it. Home and its tabs keep their own scrolling.
     private func handleScroll(_ event: NSEvent) -> Bool {
-        guard model.isHoveringPill, model.presentation.isRestingPill else { return false }
+        let presentation = model.presentation
+        guard model.isHoveringPill || model.isHoveringNotch else { return false }
+        let accepts: Bool = switch presentation {
+        case .hidden, .idle, .compact, .expanded: true
+        default: false
+        }
+        guard accepts else { return false }
         // Momentum after a swipe belongs to the swipe that was already handled.
         if event.momentumPhase != [] {
             return true
         }
         let isTrackpadGesture = event.phase != []
         if isTrackpadGesture, event.phase.contains(.began) || event.phase.contains(.mayBegin) {
-            scrollTotal = 0
+            scrollTotal = .zero
             scrollHandled = false
         }
-        guard abs(event.scrollingDeltaX) > abs(event.scrollingDeltaY) else {
-            return false
-        }
         if isTrackpadGesture {
-            scrollTotal += event.scrollingDeltaX
-            if !scrollHandled, abs(scrollTotal) > 30 {
+            scrollTotal.width += event.scrollingDeltaX
+            scrollTotal.height += event.scrollingDeltaY
+            guard !scrollHandled else { return true }
+            if abs(scrollTotal.width) > 30, abs(scrollTotal.width) > abs(scrollTotal.height) {
                 scrollHandled = true
-                model.cyclePrimary(forward: scrollTotal < 0)
+                model.swipe(forward: scrollTotal.width < 0)
+            } else if abs(scrollTotal.height) > 24, abs(scrollTotal.height) > abs(scrollTotal.width) {
+                scrollHandled = true
+                model.pull(open: Self.fingersMovedDown(scrollTotal.height, event))
             }
         } else if Date().timeIntervalSince(lastWheelStep) > 0.4 {
             // A mouse wheel has no phases: one step per notch, with a short cooldown.
             lastWheelStep = Date()
-            model.cyclePrimary(forward: event.scrollingDeltaX < 0)
+            if abs(event.scrollingDeltaX) > abs(event.scrollingDeltaY) {
+                model.swipe(forward: event.scrollingDeltaX < 0)
+            } else if event.scrollingDeltaY != 0 {
+                model.pull(open: Self.fingersMovedDown(event.scrollingDeltaY, event))
+            }
         }
         return true
+    }
+
+    /// Scroll deltas follow the fingers with natural scrolling and are reversed without it.
+    private static func fingersMovedDown(_ deltaY: CGFloat, _ event: NSEvent) -> Bool {
+        event.isDirectionInvertedFromDevice ? deltaY > 0 : deltaY < 0
     }
 }
