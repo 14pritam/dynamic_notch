@@ -292,6 +292,7 @@ public struct LayoutEngine: Equatable, Sendable {
             + NotchAppearance.verticalOffsetRange.upperBound
             + IslandMetrics.ContentHeight.maximum
             + 2 * IslandMetrics.islandExpandedPadding
+            + IslandMetrics.activityHeader
         return CGSize(
             width: screen.size.width,
             height: min(screen.size.height, (tallestShape + IslandMetrics.windowMargin).rounded(.up))
@@ -537,7 +538,9 @@ public struct LayoutEngine: Equatable, Sendable {
         default:
             let contentHeight = expandedContentHeight(for: presentation, home: home) ?? IslandMetrics.ContentHeight.timer
             let width = presentation.homeTab == nil ? expandedWidth : nookWidth
-            let size = CGSize(width: width, height: expandedHeight(content: contentHeight))
+            // An open activity gets a row on top for the back button, so Home is always one click away.
+            let header: CGFloat = if case .expanded = presentation { (IslandMetrics.activityHeader * scale).rounded() } else { 0 }
+            let size = CGSize(width: width, height: expandedHeight(content: contentHeight) + header)
             layout.pill = centered(size)
             let radius = min((IslandMetrics.islandExpandedRadius * scale).rounded(), size.height / 2)
             layout.topRadius = radius
@@ -546,7 +549,7 @@ public struct LayoutEngine: Equatable, Sendable {
             layout.stroke = 1
             layout.content = CGRect(
                 x: layout.pill.minX,
-                y: top + (IslandMetrics.islandExpandedPadding * scale).rounded(),
+                y: top + (IslandMetrics.islandExpandedPadding * scale).rounded() + header,
                 width: size.width,
                 height: contentHeight
             )

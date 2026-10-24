@@ -47,6 +47,9 @@ last one.
   Every kind of timer uses the same orange.
 
 ### Fixed
+- While music (or a timer, call or stopwatch) was open, there was no way back to Home and the other
+  features. Every open activity now has a back arrow at the top left, in both the notch and the
+  floating island style.
 - After a while (sooner if you connect headphones or join calls often) the app could get stuck
   using a full CPU core and stop responding, including the menu bar icon. It now cleans up after
   itself every time your audio devices change.

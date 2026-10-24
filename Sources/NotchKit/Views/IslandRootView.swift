@@ -61,7 +61,8 @@ struct IslandContentLayer: View {
             }
         }
         .overlay(alignment: .topLeading) {
-            if case .expanded = presentation, layout.isAttachedToTop, model.settings.appearance.style == .notch {
+            // Notch style: in the strip beside the camera. Island style: in the row above the content.
+            if case .expanded = presentation {
                 ActivityHeader(model: model, presentation: presentation)
                     .environment(\.notchScale, layout.contentScale)
                     .padding(.leading, layout.flare + 18 * layout.contentScale)

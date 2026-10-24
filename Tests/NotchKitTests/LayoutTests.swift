@@ -216,9 +216,19 @@ struct IslandLayoutTests {
     }
 
     @Test func expandedHasPaddingAroundContent() {
+        // An open activity also has the back-button row above its content.
         let expanded = engine.layout(for: .expanded(.timer), homeHasMedia: false, hovering: false)
-        #expect(expanded.content.minY - expanded.pill.minY == IslandMetrics.islandExpandedPadding)
+        #expect(expanded.content.minY - expanded.pill.minY == IslandMetrics.islandExpandedPadding + IslandMetrics.activityHeader)
         #expect(expanded.pill.maxY - expanded.content.maxY == IslandMetrics.islandExpandedPadding)
+        let home = engine.layout(for: .home, homeHasMedia: false, hovering: false)
+        #expect(home.content.minY - home.pill.minY == IslandMetrics.islandExpandedPadding)
+    }
+
+    @Test func everyOpenActivityFitsTheWindow() {
+        for kind in ActivityKind.allCases {
+            let layout = engine.layout(for: .expanded(kind), homeHasMedia: true, hovering: false)
+            #expect(layout.pill.maxY <= engine.windowSize.height)
+        }
     }
 }
 
