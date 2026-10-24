@@ -329,9 +329,9 @@ public final class IslandModel {
             }
         }
 
-        if settings.expandOnHover, inside, case .compact(let primary, _) = current {
+        if settings.notchOpenMode == .hover, inside, case .compact(let primary, _) = current {
             scheduleHoverExpand(.activity(primary))
-        } else if settings.expandOnHover, inside, case .hidden = current {
+        } else if settings.notchOpenMode == .hover, inside, case .hidden = current {
             scheduleHoverExpand(.home)
         } else if !inside {
             hoverExpandTask?.cancel()
