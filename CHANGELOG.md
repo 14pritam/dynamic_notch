@@ -17,6 +17,8 @@ last one.
 - Start Focus from the menu bar too.
 
 ### Changed
+- The first-launch hello now greets you by your first name, with a waving hand, instead of
+  "Dynamic Notch · Ready".
 - The tabs now sit on both sides of the camera (Notes and Mirror next to Settings), so none of
   them can end up hidden behind it.
 - The battery is gone from the top of Home, since it's already in your menu bar.

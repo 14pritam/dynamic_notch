@@ -55,8 +55,8 @@ your Mac will grumble about it. You only have to deal with this once and it take
 4. Open **System Settings**, go to **Privacy & Security** and scroll down a bit. You'll see a line
    saying Dynamic Notch was blocked. Click **Open Anyway**, type your password (or use Touch ID)
    and click **Open Anyway** one more time.
-5. That's it. The notch will flash **Dynamic Notch · Ready** and you'll get a little capsule icon in
-   your menu bar.
+5. That's it. The notch will say hi to you by name with a little wave, and a capsule icon shows
+   up in your menu bar.
 
 If you're comfortable with Terminal, you can skip steps 3 and 4. After dragging the app into
 Applications, run this and then open the app like normal:

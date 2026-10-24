@@ -38,7 +38,7 @@ Each state was triggered on the real notch with debug-build commands and checked
 
 | State | Result |
 |---|---|
-| First launch: "Dynamic Notch · Ready" hint | ✅ |
+| First launch: "Hi <first name>" with a waving hand | ✅ |
 | Idle: nothing drawn, screenshots clean | ✅ |
 | Compact timer, ears either side of the camera | ✅ all three sizes |
 | Expanded timer, Timer done with Repeat / Stop | ✅ |

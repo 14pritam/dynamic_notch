@@ -211,3 +211,17 @@ struct ProductivityModelTests {
         #expect(Set(sizes.map { "\($0)" }).count == 1)
     }
 }
+
+@Suite("Greeting")
+struct GreetingTests {
+    @Test func usesTheFirstName() {
+        #expect(Greeting.firstName(fromFullName: "Swagat Shandilya") == "Swagat")
+        #expect(Greeting.firstName(fromFullName: "  Ana ") == "Ana")
+        #expect(Greeting.text(fullName: "Swagat Shandilya") == "Hi Swagat")
+    }
+
+    @Test func fallsBackWithoutAName() {
+        #expect(Greeting.firstName(fromFullName: "   ") == nil)
+        #expect(Greeting.text(fullName: "") == "Hi there")
+    }
+}

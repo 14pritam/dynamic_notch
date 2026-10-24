@@ -47,10 +47,10 @@ struct AlertView: View {
             TimerFinishedView(model: model)
         case .welcome:
             AlertRow(cameraGap: cameraGap) {
-                Text("Dynamic Notch")
+                Text(Greeting.text(fullName: NSFullUserName()))
+                    .truncationMode(.tail)
             } trailing: {
-                Text("Ready")
-                    .foregroundStyle(NotchColor.green)
+                WavingHand()
             }
             .accessibilityElement(children: .combine)
         case .level(let kind, let value, let muted):
@@ -150,6 +150,23 @@ private struct BatteryLabel: View {
                 .foregroundStyle(tint)
             BatteryGlyph(level: level, isCharging: isCharging, color: tint, width: 27 * s)
         }
+    }
+}
+
+/// A hand that waves from the wrist while the hello shows.
+private struct WavingHand: View {
+    @Environment(\.notchScale) private var s
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        Text(verbatim: "\u{1F44B}")
+            .font(.system(size: 17 * s))
+            .phaseAnimator(reduceMotion ? [0.0] : [0.0, 20, -8, 20, -8, 14, 0, 0, 0]) { hand, angle in
+                hand.rotationEffect(.degrees(angle), anchor: UnitPoint(x: 0.7, y: 0.85))
+            } animation: { _ in
+                .easeInOut(duration: 0.16)
+            }
+            .accessibilityHidden(true)
     }
 }
 
