@@ -99,7 +99,7 @@ public final class SettingsStore {
         hapticsEnabled = defaults.object(forKey: Key.haptics) as? Bool ?? true
         liquidAnimations = defaults.object(forKey: Key.liquid) as? Bool ?? true
         showMenuBarIcon = defaults.object(forKey: Key.menuBarIcon) as? Bool ?? true
-        display = (defaults.string(forKey: Key.display)).flatMap(DisplayChoice.init(rawValue:)) ?? .followPointer
+        display = (defaults.string(forKey: Key.display)).flatMap(DisplayChoice.init(rawValue:)) ?? .automatic
         timerSound = defaults.object(forKey: Key.timerSound) as? Bool ?? true
         nowPlayingEnabled = defaults.object(forKey: Key.nowPlaying) as? Bool ?? true
         timerEnabled = defaults.object(forKey: Key.timer) as? Bool ?? true

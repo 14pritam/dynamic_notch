@@ -70,12 +70,12 @@ struct GeneralSettingsView: View {
                 }
                 Toggle("Show in menu bar", isOn: $settings.showMenuBarIcon)
                 Picker("Display", selection: $settings.display) {
-                    Text("The one you're using").tag(DisplayChoice.followPointer)
                     Text("Built-in display").tag(DisplayChoice.automatic)
+                    Text("Follow the pointer").tag(DisplayChoice.followPointer)
                     Text("Main display").tag(DisplayChoice.main)
                 }
             } footer: {
-                Text("\"The one you're using\" follows your pointer between screens: the notch on your MacBook, a floating island on other displays. When the menu bar icon is hidden, open Dynamic Notch again from Applications to get back here.")
+                Text("Built-in display keeps it on your MacBook's notch. Follow the pointer moves it to whichever screen you're using, as a floating island on displays without a notch. When the menu bar icon is hidden, open Dynamic Notch again from Applications to get back here.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

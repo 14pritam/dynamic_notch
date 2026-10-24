@@ -342,7 +342,8 @@ public struct LayoutEngine: Equatable, Sendable {
         case .expanded(.nowPlaying): IslandMetrics.ContentHeight.nowPlaying + (home.hasMediaSwitcher ? IslandMetrics.ContentHeight.mediaSwitcher : 0)
         case .expanded(.timer), .expanded(.stopwatch): IslandMetrics.ContentHeight.timer
         case .expanded(.call): IslandMetrics.ContentHeight.call
-        case .nook: IslandMetrics.ContentHeight.nook
+        case .nook(let tab):
+            IslandMetrics.ContentHeight.nook + (tab == .launcher ? IslandMetrics.Nook.launcherBody - IslandMetrics.Nook.body : 0)
         case .alert(.timerFinished): IslandMetrics.ContentHeight.timerFinished
         case .drop: IslandMetrics.ContentHeight.drop
         default: nil
@@ -456,7 +457,7 @@ public struct LayoutEngine: Equatable, Sendable {
             // The tab header lives in the strip beside the camera; widgets sit below it.
             let width = nookWidth
             let strip = screen.topInset
-            let body = (IslandMetrics.Nook.body * scale).rounded()
+            let body = ((presentation == .nook(.launcher) ? IslandMetrics.Nook.launcherBody : IslandMetrics.Nook.body) * scale).rounded()
             let height = strip + IslandMetrics.notchContentGap + body + (IslandMetrics.notchBottomPadding * scale).rounded()
             layout.pill = shape(body: width, height: height, flare: IslandMetrics.expandedFlare)
             layout.flare = IslandMetrics.expandedFlare

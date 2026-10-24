@@ -67,6 +67,10 @@ public enum IslandMetrics {
         public static let row: CGFloat = 30
         public static let rowGap: CGFloat = 8
         public static let mediaCardWidth: CGFloat = 210
+        /// The grid of features gets more height than the other views, so its tiles can breathe.
+        public static let launcherBody: CGFloat = 170
+        public static let launcherTile: CGFloat = 76
+        public static let launcherGap: CGFloat = 10
     }
 
     /// Island style: vertical padding above and below expanded content.

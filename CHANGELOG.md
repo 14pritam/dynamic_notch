@@ -16,6 +16,10 @@ last one.
   with events, and Up Next with each event's calendar colour. Click an event to open it in
   Calendar. It now shows the whole coming week, including all-day events.
 - The back arrow is a plain chevron that highlights under the pointer, like macOS toolbars.
+- The feature grid has more room: taller tiles, lighter type and a small coloured dot for what's
+  on right now.
+- The notch stays on your MacBook's screen again by default instead of following the pointer to
+  other displays. Choose Follow the pointer in Settings › General if you want that.
 
 ### Fixed
 - After connecting Calendar, nothing showed up in the notch on a day with no more events. The
