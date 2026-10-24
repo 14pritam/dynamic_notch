@@ -116,6 +116,8 @@ public final class IslandModel {
         timer.onFinish = { [weak self] in self?.timerDidFinish() }
         downloads.onFinished = { [weak self] url in self?.receive(.download(url)) }
         hotKeys.onPress = { [weak self] item in self?.open(item) }
+        // The permission dialog closes the notch; reopen it on the calendar so the user sees it worked.
+        calendar.onGranted = { [weak self] in self?.showTab(.calendar) }
         updater.onAvailable = { [weak self] release in self?.receive(.updateAvailable(version: release.version.description)) }
         power.onAlert = { [weak self] alert in self?.receive(alert) }
         audioRoute.onAlert = { [weak self] alert in self?.receive(alert) }
@@ -210,7 +212,7 @@ public final class IslandModel {
         guard settings.calendarEnabled else { return false }
         switch calendar.access {
         case .notAsked: return true
-        case .granted: return calendar.nextEvent != nil
+        case .granted: return true
         case .denied: return false
         }
     }
@@ -225,7 +227,8 @@ public final class IslandModel {
             hasMedia: homeHasMedia,
             hasEvent: showsCalendarRow,
             hasTimer: settings.timerEnabled,
-            hasShortcuts: !favoriteShortcuts.isEmpty
+            hasShortcuts: !favoriteShortcuts.isEmpty,
+            hasMediaSwitcher: !nowPlaying.otherSources.isEmpty
         )
     }
 

@@ -65,7 +65,7 @@ struct IslandContentLayer: View {
             if case .expanded = presentation {
                 ActivityHeader(model: model, presentation: presentation)
                     .environment(\.notchScale, layout.contentScale)
-                    .padding(.leading, layout.flare + 18 * layout.contentScale)
+                    .padding(.leading, layout.flare + 14 * layout.contentScale)
                     .frame(height: max(layout.content.minY - layout.pill.minY, 1))
                     .transition(.opacity)
             }
@@ -213,7 +213,7 @@ private struct ActivityHeader: View {
     @Environment(\.notchScale) private var s
 
     var body: some View {
-        HStack(spacing: 6 * s) {
+        HStack(spacing: 3 * s) {
             BackToHomeButton(model: model)
             Text(title)
                 .font(.system(size: 13 * s, weight: .semibold))

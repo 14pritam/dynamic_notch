@@ -339,7 +339,7 @@ public struct LayoutEngine: Equatable, Sendable {
 
     private func baseContentHeight(for presentation: IslandPresentation, home: HomeContent) -> CGFloat? {
         switch presentation {
-        case .expanded(.nowPlaying): IslandMetrics.ContentHeight.nowPlaying
+        case .expanded(.nowPlaying): IslandMetrics.ContentHeight.nowPlaying + (home.hasMediaSwitcher ? IslandMetrics.ContentHeight.mediaSwitcher : 0)
         case .expanded(.timer), .expanded(.stopwatch): IslandMetrics.ContentHeight.timer
         case .expanded(.call): IslandMetrics.ContentHeight.call
         case .nook: IslandMetrics.ContentHeight.nook

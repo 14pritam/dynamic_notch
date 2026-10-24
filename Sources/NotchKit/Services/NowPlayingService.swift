@@ -1,6 +1,18 @@
 import AppKit
 import Observation
 
+/// Another app that was playing when a newer one took over Now Playing, and may still be.
+public struct MediaSource: Identifiable {
+    public var id: String
+    public var name: String
+    public var icon: NSImage?
+    public var info: NowPlayingInfo
+    public var artwork: NSImage?
+    public var accent: ColorMath.RGB
+    /// When this snapshot was taken.
+    public var since: Date
+}
+
 /// What is playing anywhere on the Mac, plus play/pause/skip/seek.
 @MainActor
 @Observable
@@ -17,6 +29,19 @@ public final class NowPlayingService {
 
     public var lingerDuration: TimeInterval = 30
 
+    /// Apps that were playing before the current one took over and are probably still going
+    /// (macOS reports only one "now playing" app, so these are remembered here).
+    public private(set) var otherSources: [MediaSource] = []
+    /// Which app the music view shows: nil for the current one, or an id from `otherSources`.
+    public var selectedSourceID: String?
+
+    public var currentSourceID: String? { resolvedBundleIdentifier }
+
+    public var selectedSource: MediaSource? {
+        guard let selectedSourceID else { return nil }
+        return otherSources.first { $0.id == selectedSourceID }
+    }
+
     /// Whether Now Playing should appear as a live activity.
     public var isActivityVisible: Bool {
         guard let info, info.hasContent else { return false }
@@ -31,6 +56,9 @@ public final class NowPlayingService {
     @ObservationIgnored private var expectedPlayState: (isPlaying: Bool, until: Date)?
     /// Artwork we asked the helper to resend, so a missing image triggers one request, not a loop.
     @ObservationIgnored private var requestedArtworkKey: String?
+    @ObservationIgnored private var pruneTask: Task<Void, Never>?
+    /// A source with no track length is kept this long after it stopped being current.
+    static let otherSourceLimit: TimeInterval = 20 * 60
 
     public init() {
         bridge.onMessage = { [weak self] message in self?.handle(message) }
@@ -49,6 +77,16 @@ public final class NowPlayingService {
     public func stop() {
         bridge.stop()
         lingerTask?.cancel()
+        pruneTask?.cancel()
+    }
+
+    /// Brings another playing app to the front so it can be controlled there.
+    public func open(_ source: MediaSource) {
+        if let pid = source.info.processIdentifier, let app = NSRunningApplication(processIdentifier: pid), app.activationPolicy == .regular {
+            app.activate()
+        } else if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: source.id) {
+            NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
+        }
     }
 
     // MARK: Controls
@@ -130,8 +168,10 @@ public final class NowPlayingService {
             }
         }
 
+        let previous = snapshotOfCurrent(at: now)
         updateArtwork(for: newInfo, data: artworkData, accent: newAccent)
         updateSourceApp(for: newInfo)
+        trackOtherSources(previous: previous, now: now)
 
         let wasPlaying = info?.isPlaying ?? false
         info = newInfo
@@ -186,6 +226,54 @@ public final class NowPlayingService {
         }
         appIcon = NSWorkspace.shared.icon(forFile: url.path)
         appName = FileManager.default.displayName(atPath: url.path).replacingOccurrences(of: ".app", with: "")
+    }
+
+    // MARK: Other sources
+
+    private func snapshotOfCurrent(at now: Date) -> MediaSource? {
+        guard let info, info.hasContent, let id = resolvedBundleIdentifier else { return nil }
+        return MediaSource(id: id, name: appName ?? id, icon: appIcon, info: info, artwork: artwork, accent: accent, since: now)
+    }
+
+    /// When another app takes over while the old one was playing, keep the old one as a source.
+    private func trackOtherSources(previous: MediaSource?, now: Date) {
+        let current = resolvedBundleIdentifier
+        otherSources.removeAll { $0.id == current }
+        if let previous, previous.id != current, previous.info.isPlaying {
+            otherSources.removeAll { $0.id == previous.id }
+            otherSources.insert(previous, at: 0)
+        }
+        if let selectedSourceID, !otherSources.contains(where: { $0.id == selectedSourceID }) {
+            self.selectedSourceID = nil
+        }
+        schedulePrune()
+    }
+
+    /// Forgets sources whose app quit or whose track has run out.
+    func pruneOtherSources(now: Date = Date()) {
+        otherSources.removeAll { source in
+            if NSRunningApplication.runningApplications(withBundleIdentifier: source.id).isEmpty { return true }
+            if let duration = source.info.duration, let elapsed = source.info.elapsed(at: now) {
+                return elapsed >= duration
+            }
+            return now.timeIntervalSince(source.since) > Self.otherSourceLimit
+        }
+        if let selectedSourceID, !otherSources.contains(where: { $0.id == selectedSourceID }) {
+            self.selectedSourceID = nil
+        }
+    }
+
+    private func schedulePrune() {
+        pruneTask?.cancel()
+        guard !otherSources.isEmpty else { return }
+        pruneTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(5))
+                guard let self, !Task.isCancelled else { return }
+                self.pruneOtherSources()
+                if self.otherSources.isEmpty { return }
+            }
+        }
     }
 
     private func beginLinger() {

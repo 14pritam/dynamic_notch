@@ -49,8 +49,10 @@ public enum IslandMetrics {
         public static let timerFinished: CGFloat = 72
         /// Floating pill style: the Home/Tray/Mirror nook (header row plus body).
         public static let nook: CGFloat = 154
+        /// The row of app buttons in the music view when several apps are playing.
+        public static let mediaSwitcher: CGFloat = 38
         /// Tallest expanded content in either style; sizes the window.
-        public static let maximum: CGFloat = 154
+        public static let maximum: CGFloat = nowPlaying + mediaSwitcher
     }
 
     /// The Home, Tray and Mirror tabs share one fixed-size "nook", like the paid notch apps:
@@ -107,12 +109,15 @@ public struct HomeContent: Equatable, Sendable {
     public var hasEvent: Bool
     public var hasTimer: Bool
     public var hasShortcuts: Bool
+    /// More than one app is playing, so the music view shows a row to switch between them.
+    public var hasMediaSwitcher: Bool
 
-    public init(hasMedia: Bool = false, hasEvent: Bool = false, hasTimer: Bool = true, hasShortcuts: Bool = false) {
+    public init(hasMedia: Bool = false, hasEvent: Bool = false, hasTimer: Bool = true, hasShortcuts: Bool = false, hasMediaSwitcher: Bool = false) {
         self.hasMedia = hasMedia
         self.hasEvent = hasEvent
         self.hasTimer = hasTimer
         self.hasShortcuts = hasShortcuts
+        self.hasMediaSwitcher = hasMediaSwitcher
     }
 
     /// Rows in the widget column (calendar, timer, shortcuts).

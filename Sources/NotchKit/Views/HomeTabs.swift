@@ -26,6 +26,7 @@ struct NookContainer<Content: View>: View {
                 Group {
                     if tab.isPanel {
                         PanelTitle(model: model, title: Self.panelTitle(tab))
+                            .padding(.leading, -6 * s)
                     } else {
                         NookTabs(model: model, tabs: tabs, selected: tab)
                     }
@@ -66,7 +67,7 @@ private struct PanelTitle: View {
     @Environment(\.notchScale) private var s
 
     var body: some View {
-        HStack(spacing: 6 * s) {
+        HStack(spacing: 3 * s) {
             BackToHomeButton(model: model)
             Text(title)
                 .font(.system(size: 13 * s, weight: .semibold))
@@ -76,22 +77,27 @@ private struct PanelTitle: View {
     }
 }
 
-/// A chevron that returns to Home, used on panels and on every activity's expanded view.
+/// Back to Home, drawn the way macOS draws toolbar back buttons: a plain chevron that gets a soft
+/// round highlight under the pointer. Used on panels and on every activity's expanded view.
 struct BackToHomeButton: View {
     let model: IslandModel
+    @State private var isHovering = false
     @Environment(\.notchScale) private var s
 
     var body: some View {
         Button {
             model.showTab(.home)
         } label: {
-            Image(systemName: "chevron.left")
-                .font(.system(size: 12 * s, weight: .bold))
-                .foregroundStyle(.white)
-                .frame(width: 26 * s, height: 26 * s)
-                .background(Circle().fill(NotchColor.buttonFill))
+            Image(systemName: "chevron.backward")
+                .font(.system(size: 13 * s, weight: .semibold))
+                .foregroundStyle(.white.opacity(isHovering ? 1 : 0.85))
+                .frame(width: 24 * s, height: 24 * s)
+                .background(Circle().fill(Color.white.opacity(isHovering ? 0.14 : 0)))
+                .contentShape(Circle())
+                .animation(.easeOut(duration: 0.15), value: isHovering)
         }
         .buttonStyle(PressableButtonStyle())
+        .onHover { isHovering = $0 }
         .help("Home")
         .accessibilityLabel(Text("Back to Home"))
     }
@@ -355,29 +361,41 @@ private struct CalendarRow: View {
                 Button("Connect") { calendar.requestAccess() }
                     .buttonStyle(ChipButtonStyle(tint: NotchColor.red, scale: s))
                     .fixedSize()
-            } else if let event = calendar.nextEvent {
+            } else {
+                // Always shown once connected, even on a free day, and always opens the month.
                 Button { model.showTab(.calendar) } label: {
                     HStack(spacing: 7 * s) {
-                        Circle()
-                            .fill(NotchColor.accent(event.color))
-                            .frame(width: 6 * s, height: 6 * s)
-                        Text(event.title)
-                            .font(.system(size: 12 * s, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .lineLimit(1)
-                        Spacer(minLength: 6 * s)
-                        TimelineView(.everyMinute) { context in
-                            Text(CalendarRules.relativeLabel(for: event, at: context.date))
-                                .font(.system(size: 11 * s, weight: .medium))
-                                .monospacedDigit()
-                                .foregroundStyle(event.isHappening(at: context.date) ? NotchColor.green : NotchColor.secondaryText)
-                                .fixedSize()
+                        if let event = calendar.nextEvent {
+                            RoundedRectangle(cornerRadius: 1.5 * s, style: .continuous)
+                                .fill(NotchColor.accent(event.color))
+                                .frame(width: 3 * s, height: 14 * s)
+                            Text(event.title)
+                                .font(.system(size: 12 * s, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .lineLimit(1)
+                            Spacer(minLength: 6 * s)
+                            TimelineView(.everyMinute) { context in
+                                Text(CalendarRules.relativeLabel(for: event, at: context.date))
+                                    .font(.system(size: 11 * s, weight: .medium))
+                                    .monospacedDigit()
+                                    .foregroundStyle(event.isHappening(at: context.date) ? NotchColor.green : NotchColor.secondaryText)
+                                    .fixedSize()
+                            }
+                        } else {
+                            Text("No more events this week")
+                                .font(.system(size: 12 * s, weight: .medium))
+                                .foregroundStyle(NotchColor.secondaryText)
+                                .lineLimit(1)
+                            Spacer(minLength: 6 * s)
                         }
+                        Image(systemName: "chevron.forward")
+                            .font(.system(size: 9 * s, weight: .bold))
+                            .foregroundStyle(Color.white.opacity(0.3))
                     }
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(PressableButtonStyle())
-                .accessibilityLabel(Text("Next event, \(event.title)"))
+                .accessibilityLabel(Text(calendar.nextEvent.map { "Next event, \($0.title)" } ?? "Calendar"))
             }
         }
     }

@@ -9,13 +9,15 @@ public struct CalendarEvent: Equatable, Sendable, Identifiable {
     public var start: Date
     public var end: Date
     public var color: ColorMath.RGB
+    public var isAllDay: Bool
 
-    public init(id: String, title: String, start: Date, end: Date, color: ColorMath.RGB = .white) {
+    public init(id: String, title: String, start: Date, end: Date, color: ColorMath.RGB = .white, isAllDay: Bool = false) {
         self.id = id
         self.title = title
         self.start = start
         self.end = end
         self.color = color
+        self.isAllDay = isAllDay
     }
 
     public func isHappening(at date: Date) -> Bool {
@@ -31,7 +33,7 @@ public enum CalendarRules {
     /// The event happening now, or else the next one to start.
     public static func nextEvent(in events: [CalendarEvent], at date: Date) -> CalendarEvent? {
         events
-            .filter { $0.end > date }
+            .filter { !$0.isAllDay && $0.end > date }
             .sorted { $0.start < $1.start }
             .first
     }
@@ -40,18 +42,20 @@ public enum CalendarRules {
     public static func nextReminder(in events: [CalendarEvent], after date: Date, reminded: Set<String>)
         -> (event: CalendarEvent, at: Date)? {
         events
-            .filter { !reminded.contains($0.id) && $0.start > date }
+            .filter { !$0.isAllDay && !reminded.contains($0.id) && $0.start > date }
             .map { (event: $0, at: max(date, $0.start.addingTimeInterval(-reminderLead))) }
             .min { $0.at < $1.at }
     }
 
-    /// "now", "in 12 min", "in 1 hr", or a clock time for later today.
-    public static func relativeLabel(for event: CalendarEvent, at date: Date) -> String {
+    /// "now", "in 12 min", "in 1 hr", a clock time for later today, or the day and time after that.
+    public static func relativeLabel(for event: CalendarEvent, at date: Date, calendar: Calendar = .current) -> String {
         if event.isHappening(at: date) { return String(localized: "now") }
         let minutes = Int((event.start.timeIntervalSince(date) / 60).rounded(.up))
         if minutes < 60 { return String(localized: "in \(max(minutes, 1)) min") }
         if minutes < 120 { return String(localized: "in 1 hr") }
-        return event.start.formatted(date: .omitted, time: .shortened)
+        let time = event.start.formatted(date: .omitted, time: .shortened)
+        if calendar.isDate(event.start, inSameDayAs: date) { return time }
+        return dayLabel(for: event, at: date, calendar: calendar) + " " + time
     }
 }
 
@@ -108,12 +112,25 @@ public final class CalendarService {
     }
 
     /// Asks for calendar access. Only ever called from a button the user pressed.
+    /// Called once access is granted, so the notch can show the result right away.
+    @ObservationIgnored public var onGranted: (() -> Void)?
+
     public func requestAccess() {
         Task { [weak self] in
             guard let self else { return }
             let granted = (try? await self.store.requestFullAccessToEvents()) ?? false
+            // A store created before access was granted keeps returning nothing until it's reset.
+            if granted { self.store.reset() }
             self.access = granted ? .granted : .denied
             self.reload()
+            if granted { self.onGranted?() }
+        }
+    }
+
+    /// Opens the Calendar app on the day of the event.
+    public func open(_ event: CalendarEvent) {
+        if let url = URL(string: "calshow:\(event.start.timeIntervalSinceReferenceDate)") {
+            NSWorkspace.shared.open(url)
         }
     }
 
@@ -145,16 +162,19 @@ public final class CalendarService {
             return
         }
         let now = Date()
-        let predicate = store.predicateForEvents(withStart: now.addingTimeInterval(-6 * 3600), end: now.addingTimeInterval(24 * 3600), calendars: nil)
+        // The coming week, so the Calendar panel has something to show on a quiet day.
+        let start = Calendar.current.startOfDay(for: now)
+        let predicate = store.predicateForEvents(withStart: start, end: start.addingTimeInterval(8 * 24 * 3600), calendars: nil)
         let fresh = store.events(matching: predicate)
-            .filter { !$0.isAllDay && $0.status != .canceled && !Self.isDeclined($0) }
+            .filter { $0.status != .canceled && !Self.isDeclined($0) }
             .map { event in
                 CalendarEvent(
                     id: (event.calendarItemIdentifier) + "@" + String(event.startDate.timeIntervalSince1970),
                     title: event.title?.isEmpty == false ? event.title! : String(localized: "Event"),
                     start: event.startDate,
                     end: event.endDate,
-                    color: Self.rgb(event.calendar?.color)
+                    color: Self.rgb(event.calendar?.color),
+                    isAllDay: event.isAllDay
                 )
             }
             .sorted { $0.start < $1.start }
@@ -200,16 +220,39 @@ public final class CalendarService {
 }
 
 extension CalendarRules {
-    /// The event happening now and the next few after it, soonest first.
+    /// What's on now and coming up, soonest first; all-day events lead their day.
     public static func upcoming(in events: [CalendarEvent], at date: Date, limit: Int) -> [CalendarEvent] {
-        Array(events.filter { $0.end > date }.sorted { $0.start < $1.start }.prefix(limit))
+        let calendar = Calendar.current
+        return Array(
+            events
+                .filter { $0.end > date }
+                .sorted {
+                    let dayA = calendar.startOfDay(for: max($0.start, date))
+                    let dayB = calendar.startOfDay(for: max($1.start, date))
+                    if dayA != dayB { return dayA < dayB }
+                    if $0.isAllDay != $1.isAllDay { return $0.isAllDay }
+                    return $0.start < $1.start
+                }
+                .prefix(limit)
+        )
     }
 
-    /// "10:30 – 11:00 AM", or "now until 11:00 AM" while it's on.
+    /// "10:30 – 11:00 AM", "Now · until 11:00 AM" or "All day".
     public static func timeRange(for event: CalendarEvent, at date: Date) -> String {
+        if event.isAllDay { return String(localized: "All day") }
         let end = event.end.formatted(date: .omitted, time: .shortened)
-        if event.isHappening(at: date) { return String(localized: "now until \(end)") }
+        if event.isHappening(at: date) { return String(localized: "Now · until \(end)") }
         return event.start.formatted(date: .omitted, time: .shortened) + " – " + end
+    }
+
+    /// "Today", "Tomorrow", or the weekday and date for later in the week.
+    public static func dayLabel(for event: CalendarEvent, at date: Date, calendar: Calendar = .current) -> String {
+        let day = max(event.start, date)
+        if calendar.isDate(day, inSameDayAs: date) { return String(localized: "Today") }
+        if let tomorrow = calendar.date(byAdding: .day, value: 1, to: date), calendar.isDate(day, inSameDayAs: tomorrow) {
+            return String(localized: "Tomorrow")
+        }
+        return day.formatted(.dateTime.weekday(.wide).day().month(.abbreviated))
     }
 }
 

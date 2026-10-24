@@ -10,6 +10,23 @@ struct NowPlayingExpandedView: View {
 
     var body: some View {
         let service = model.nowPlaying
+        VStack(spacing: 0) {
+            if let other = service.selectedSource {
+                OtherSourceView(service: service, source: other)
+            } else {
+                current
+            }
+            if !service.otherSources.isEmpty {
+                MediaSourceSwitcher(service: service)
+                    .frame(height: IslandMetrics.ContentHeight.mediaSwitcher * s)
+            }
+        }
+        .frame(maxHeight: .infinity)
+    }
+
+    @ViewBuilder
+    private var current: some View {
+        let service = model.nowPlaying
         let info = service.info
         let accent = NotchColor.accent(service.accent)
         VStack(spacing: 0) {
@@ -179,5 +196,106 @@ struct CallExpandedView: View {
             }
             .padding(.horizontal, 20 * s)
         }
+    }
+}
+
+// MARK: Several apps playing
+
+/// One button per playing app, like the iPhone's activity switcher: the one shown is white.
+private struct MediaSourceSwitcher: View {
+    let service: NowPlayingService
+    @Environment(\.notchScale) private var s
+
+    var body: some View {
+        HStack(spacing: 8 * s) {
+            SourceButton(
+                name: service.appName ?? String(localized: "Now Playing"),
+                icon: service.appIcon,
+                isSelected: service.selectedSourceID == nil
+            ) { withAnimation(.spring(duration: 0.3, bounce: 0.15)) { service.selectedSourceID = nil } }
+            ForEach(service.otherSources) { source in
+                SourceButton(name: source.name, icon: source.icon, isSelected: service.selectedSourceID == source.id) {
+                    withAnimation(.spring(duration: 0.3, bounce: 0.15)) { service.selectedSourceID = source.id }
+                }
+            }
+        }
+        .padding(.horizontal, 22 * s)
+        .padding(.top, 6 * s)
+    }
+}
+
+private struct SourceButton: View {
+    let name: String
+    let icon: NSImage?
+    let isSelected: Bool
+    let action: () -> Void
+    @Environment(\.notchScale) private var s
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6 * s) {
+                if let icon {
+                    Image(nsImage: icon)
+                        .resizable()
+                        .frame(width: 16 * s, height: 16 * s)
+                }
+                Text(name)
+                    .font(.system(size: 12.5 * s, weight: .semibold))
+                    .lineLimit(1)
+            }
+            .foregroundStyle(isSelected ? .black : .white)
+            .frame(maxWidth: .infinity)
+            .frame(height: 28 * s)
+            .background(
+                RoundedRectangle(cornerRadius: 9 * s, style: .continuous)
+                    .fill(isSelected ? Color.white : Color.white.opacity(0.12))
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 9 * s, style: .continuous))
+        }
+        .buttonStyle(PressableButtonStyle())
+        .accessibilityLabel(Text(name))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
+/// What another app is playing. macOS only lets the notch control the app it calls "now
+/// playing", so this one offers to open the app instead of play controls.
+private struct OtherSourceView: View {
+    let service: NowPlayingService
+    let source: MediaSource
+    @Environment(\.notchScale) private var s
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 12 * s) {
+                ArtworkView(artwork: source.artwork, fallbackIcon: source.icon, size: 56 * s, cornerRadius: 13 * s)
+                VStack(alignment: .leading, spacing: 2 * s) {
+                    Text(source.info.title)
+                        .font(.system(size: 15 * s, weight: .semibold))
+                        .foregroundStyle(.white)
+                    Text(source.info.artist.isEmpty ? source.name : source.info.artist)
+                        .font(.system(size: 13 * s))
+                        .foregroundStyle(NotchColor.secondaryText)
+                }
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                WaveformBars(color: NotchColor.accent(source.accent), isPlaying: true)
+                    .frame(width: 20 * s, height: 18 * s)
+            }
+            Button {
+                service.open(source)
+            } label: {
+                Label("Open \(source.name)", systemImage: "arrow.up.forward.app")
+                    .font(.system(size: 13 * s, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16 * s)
+                    .frame(height: 32 * s)
+                    .background(Capsule().fill(Color.white.opacity(0.14)))
+            }
+            .buttonStyle(PressableButtonStyle())
+            .padding(.top, 16 * s)
+        }
+        .padding(.horizontal, 22 * s)
+        .frame(maxHeight: .infinity)
     }
 }

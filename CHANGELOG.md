@@ -5,6 +5,23 @@ Every release of Dynamic Notch, newest first. The format follows
 [Semantic Versioning](https://semver.org/): new features bump the middle number, fixes bump the
 last one.
 
+## [Unreleased]
+
+### Added
+- **Several apps playing at once.** When a second app starts playing music or video while the
+  first keeps going, the music view shows a button for each so you can switch between them.
+
+### Changed
+- The Calendar panel looks like Apple's Calendar widget: the month name in red, a dot under days
+  with events, and Up Next with each event's calendar colour. Click an event to open it in
+  Calendar. It now shows the whole coming week, including all-day events.
+- The back arrow is a plain chevron that highlights under the pointer, like macOS toolbars.
+
+### Fixed
+- After connecting Calendar, nothing showed up in the notch on a day with no more events. The
+  Calendar row now always shows once connected, and the notch opens on your calendar right after
+  you allow access.
+
 ## [1.2.0] - 2026-10-24
 
 ### Added
